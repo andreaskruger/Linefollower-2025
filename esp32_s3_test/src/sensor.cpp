@@ -53,7 +53,7 @@ void lineSensor_value_back(struct sensorData_t* sensorData){
   back_buffer[4] = analogRead(backSensor_5);
   
   for (size_t i = 0; i < sensorData->back_sensor_size; i++){
-    num += back_buffer[i] * i;
+    num += back_buffer[i] * i * 1000;
     denom += back_buffer[i];
   } 
   sensorData->lineSensor_value_back = (num/denom);
