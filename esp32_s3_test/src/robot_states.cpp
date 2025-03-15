@@ -21,6 +21,11 @@ void calculate_velocity(struct positionData_t* positionData, struct sensorData_t
     positionData->omega_r = (PI*((sensorData->rightEncoderTick - sensorData->prev_rightEncoderTick)*sensorData->dt))/MOTOR_POLES;
     positionData->Vl = positionData->omega_l*WHEEL_DIAMETER;
     positionData->Vr = positionData->omega_r*WHEEL_DIAMETER;
+    
+    #if DEBUG_MODE == 1
+        USBSerial.printf("Left wheel velocity: %d\n", positionData->Vl);
+        USBSerial.printf("Righ wheel velocity: %d\n", positionData->Vr);
+    #endif
 
     sensorData->prev_leftEncoderTick = sensorData->leftEncoderTick;
     sensorData->prev_rightEncoderTick = sensorData->rightEncoderTick;

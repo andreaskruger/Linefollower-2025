@@ -79,6 +79,8 @@
 #define RIGHT_ADR                   (0x0A)
 #define FRONT_SENSOR_EPROM_ADR      (0x00)
 #define BACK_SENSOR_EPROM_ADR       (0x0C)
+#define NR_FRONT_PIXELS             (10)
+#define NR_BACK_PIXELS              (5)
 #define ALL_BLACK_VALUE             (1000) // Figure out a value and a range to signal the end line is found
 
 // PID
@@ -96,6 +98,9 @@
 #define AGR_PWM_KD                  (0.0)
 
 // Filters
-#define LP_ALPHA                    (0.01)
+#define Fc                          (200.0)
+#define Tf                          (1.0/(2*PI*Fc))
+#define Ts                          (1.0/(((MC_CLOCK_SPEED/TIMER_PRESCALER)/TIMER_FREQUENCY)))
+#define LP_ALPHA                    (Ts/(Tf +Ts))
 
 #endif

@@ -532,6 +532,7 @@ class MainWindow(QMainWindow):
         else:
             if not self.cal_pwm:
                 # Update the table
+                del data_dict["description"]
                 self.update_table(data_dict)
 
                 # Update the data dictionary
@@ -560,6 +561,7 @@ class MainWindow(QMainWindow):
 
             else:
                 self.cal_pwm_values = data_dict
+                del data_dict["description"]
                 self.update_table(data_dict)
                 with open(self.cal_pwm_file_path, "a") as file:
                     file.write(f"{data_dict['name']} PWM: {round(data_dict['PWM'], 2)}, RPM: {round(data_dict['RPM'], 2)}\n")
@@ -584,6 +586,7 @@ class MainWindow(QMainWindow):
         # Save some current values
         for i, (k, v) in enumerate(data_dict.items()):
             if k != "message":
+                v = float(v)
                 if k not in self.current_tot:
                     self.current_tot[k] = 0
                     self.current_min[k] = 10000

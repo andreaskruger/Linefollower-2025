@@ -18,7 +18,7 @@ void lineSensor_value_front(struct sensorData_t* sensorData){
   Wire.endTransmission(false);
   Wire.requestFrom(LEFT_ADR, 10, 1);
 
-  for (size_t i = 0; i < 10; i++){
+  for (size_t i = 0; i < sensorData->front_sensor_size; i++){
     buf[i] = Wire.read();
   }
 
@@ -27,11 +27,11 @@ void lineSensor_value_front(struct sensorData_t* sensorData){
   Wire.endTransmission(false);
   Wire.requestFrom(RIGHT_ADR, 10, 1);
 
-  for (size_t i = 0; i < 10; i++){
+  for (size_t i = 0; i < sensorData->front_sensor_size; i++){
     buf[i + 10] = Wire.read();
   }
 
-  for (uint32_t i = 0; i < 10; i++){
+  for (size_t i = 0; i < sensorData->front_sensor_size; i++){
     uint16_t val = (uint16_t)(buf[2 * i]) | (((uint16_t)(buf[2 * i + 1]) << 8) & 0xFF00);
     num += val * i * 1000;
     denom += val;
@@ -43,14 +43,20 @@ void lineSensor_value_front(struct sensorData_t* sensorData){
 }
 
 void lineSensor_value_back(struct sensorData_t* sensorData){
-  uint16_t sens_1 = analogRead(backSensor_1);
-  uint16_t sens_2 = analogRead(backSensor_2);
-  uint16_t sens_3 = analogRead(backSensor_3);
-  uint16_t sens_4 = analogRead(backSensor_4);
-  uint16_t sens_5 = analogRead(backSensor_5);
-  int32_t result = (int32_t)((-sens_1*3 + -sens_2*2 + sens_3 + sens_4*2 + sens_5*3) / 5); // NOTE: Correct this, only for testing
-  sensorData->lineSensor_value_back = result;
-
+  int32_t back_buffer[5] = {0x00};
+  int32_t num = 1;
+  int32_t denom = 1;
+  back_buffer[0] = analogRead(backSensor_1);
+  back_buffer[1] = analogRead(backSensor_2);
+  back_buffer[2] = analogRead(backSensor_3);
+  back_buffer[3] = analogRead(backSensor_4);
+  back_buffer[4] = analogRead(backSensor_5);
+  
+  for (size_t i = 0; i < sensorData->back_sensor_size; i++){
+    num += back_buffer[i] * i;
+    denom += back_buffer[i];
+  } 
+  sensorData->lineSensor_value_back = (num/denom);
   #if DEBUG_MODE == 1
     USBSerial.printf("Line sensor value back: %d\n", sensorData->lineSensor_value_back);
   #endif

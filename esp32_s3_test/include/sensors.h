@@ -56,10 +56,10 @@ struct sensorData_t{ // Change thi struct to be more general and have 1 defined 
     int32_t rightEncoderTick;
     int32_t lineSensor_value_front;
     int32_t lineSensor_value_back;
-    uint16_t start_adddress_calibration_front;
-    uint16_t start_adddress_calibration_back;
-    uint16_t front_sensor_size;
-    uint16_t back_sensor_size;
+    uint8_t start_adddress_calibration_front;
+    uint8_t start_adddress_calibration_back;
+    int32_t front_sensor_size;
+    int32_t back_sensor_size;
     int32_t front_calibration_data[11];
     int32_t back_calibration_data[6];
     float dt;

@@ -13,8 +13,8 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     sensorData->lineSensor_value_back = 0.0;
     sensorData->start_adddress_calibration_front = FRONT_SENSOR_EPROM_ADR;
     sensorData->start_adddress_calibration_back = BACK_SENSOR_EPROM_ADR;
-    sensorData->front_sensor_size = 0;
-    sensorData->back_sensor_size = 0;
+    sensorData->front_sensor_size = NR_FRONT_PIXELS;
+    sensorData->back_sensor_size = NR_BACK_PIXELS;
     sensorData->dt = DT;
 
     USBSerial.printf("Initiating encoder data struct...\n");

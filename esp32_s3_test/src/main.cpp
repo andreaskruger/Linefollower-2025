@@ -184,7 +184,7 @@ void run_simple(){
             timer_counter = 0;
         }
         calculate_PID(&pwm_pid, sensorData.lineSensor_value_front);
-
+        
         update_robotStates(&sensorData, &positionData, &robotStates, pwm_pid.output, pwm_pid.output);
         set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
         set_motor_commands(RUN, RIGHT_MOTOR, robotStates.right_controlSignal);
@@ -258,22 +258,18 @@ void setup() {
     motor_pins_setup();
     read_dipSwitchConfig();
 
-    if (dip_configuration == DIP_11 or DIP_10){
-        setupAccessPoint();
-        USBSerial.printf("Waiting for client to connect... ");
-        while (true){
-            if (!client || !client.connected()) {
-                WiFiClient newClient = server.available();
-                if (newClient) {
-                    client = newClient;
-                    USBSerial.printf("New client connected!\n");
-                    break;
-                }
+    setupAccessPoint();
+    USBSerial.printf("Waiting for client to connect... ");
+    while (true){
+        if (!client || !client.connected()) {
+            WiFiClient newClient = server.available();
+            if (newClient) {
+                client = newClient;
+                USBSerial.printf("New client connected!\n");
+                break;
             }
-            delay(500);
         }
-    }else{
-        USBSerial.printf("Access point not enabled, going to idle mode with no WiFi connection...\n");
+        delay(500);
     }
 
     // Setup encoders
