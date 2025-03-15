@@ -1,10 +1,5 @@
 /**
-* Description:
-* 
-* Note:
-* 
-* Usage:
-* 
+
 **/
 #include "isr_handler.h"
 #include "defines.h"

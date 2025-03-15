@@ -1,10 +1,15 @@
 /**
-* Description:
+* Description: Header file for sensors.cpp
+* Contains functions to read sensors and copy information stored in structs. All sensors are stored in structs.
 * 
 * Note:
-* 
+* The struct encoderData_t stores the nr of ticks of the encoders which are updated in the isr functions encoder1_isr() and encoder2_isr().
+* To share the instance of the struct encoderData_t with the isr functions, a ptr is constructed in the main.cpp file and used by the isr functions as an extern ptr.
 * Usage:
-* 
+* Initialize the structs in the main.cpp file.
+* Call the functions to read the sensors.
+* Calibrate the sensors if needed, store in EEPROM. 
+* Read the calibration data from EEPROM.
 **/
 
 #ifndef SENSORS_H
@@ -39,14 +44,25 @@ struct encoderData_t{
  * @param rightEncoderTick: Tick count of right encoder (int32_t).
  * @param lineSensor_value_front: Value of front line sensor (int32_t).
  * @param lineSensor_value_back: Value of back line sensor (int32_t).
+ * @param start_adddress_calibration: Start address of the calibration data in the eeprom (uint16_t).
+ * @param sensor_size: Size of the sensor data in the eeprom (uint16_t).
+ * @param calibration_data: Array to store the calibration data (int32_t[10]).
+ * @param dt: Time step (float).
  */
-struct sensorData_t{
+struct sensorData_t{ // Change thi struct to be more general and have 1 defined struct and declare structs for each sensor intead
     int32_t prev_leftEncoderTick;
     int32_t prev_rightEncoderTick;
     int32_t leftEncoderTick;
     int32_t rightEncoderTick;
     int32_t lineSensor_value_front;
     int32_t lineSensor_value_back;
+    uint16_t start_adddress_calibration_front;
+    uint16_t start_adddress_calibration_back;
+    uint16_t front_sensor_size;
+    uint16_t back_sensor_size;
+    int32_t front_calibration_data[11];
+    int32_t back_calibration_data[6];
+    float dt;
 };
 
 /**
@@ -86,5 +102,25 @@ void calibrate_front_line_sensor(struct sensorData_t* sensorData);
  */
 void calibrate_back_line_sensor(struct sensorData_t* sensorData);
 
+
+/**
+ * @brief Initialize the sensor calibration in the eeprom.
+ * @param size: Size of the sensor data in the eeprom (uint32_t).
+ */
+void init_sensor_calibration_eeprom(uint32_t size);
+
+/**
+ * @brief Store the sensor calibration in the eeprom.
+ * @param sensorData: Pointer to the sensor data struct.
+ * @see sensorData_t
+ */
+void store_sensor_calibration_eeprom(struct sensorData_t* sensorData);
+
+/**
+ * @brief Read the sensor calibration from the eeprom.
+ * @param sensorData: Pointer to the sensor data struct.
+ * @see sensorData_t
+ */
+void read_sensor_calibration_eeprom(struct sensorData_t* sensorData);
 #endif
 

@@ -1,5 +1,6 @@
 /**
-* Description:
+* Description: Contains the structs and functions to calculate the position and velocity of the robot, store robot states and current control signals.
+* Commands for setting motors as well as force stop the motors.
 * 
 * Note:
 * 
@@ -16,7 +17,9 @@
  * @param x_pos: X position (float).
  * @param y_pos: Y position (float).
  * @param theta: Theta (float).
- * @param omega: Omega (float).
+ * @param omega_l: Left omega (float).
+ * @param omega_r: Right omega (float).
+ * @param omega_robot: Robot omega (float).
  * @param V: Velocity (float).
  * @param d: Distance between wheels (float).
  * @param Vl: Left velocity (float).
@@ -27,7 +30,9 @@ struct positionData_t{
     float x_pos;
     float y_pos;
     float theta;
-    float omega;
+    float omega_l;
+    float omega_r;
+    float omega_robot;
     float V;
     float d;
     float Vl;
@@ -80,12 +85,10 @@ void calculate_velocity(struct positionData_t* positionData, struct sensorData_t
  * @param sensorData: Pointer to the sensor data struct.
  * @param positionData: Pointer to the position data struct.
  * @param robotStates: Pointer to the robot states struct.
- * @param front_sensor_value: Value of front line sensor (float).
- * @param back_sensor_value: Value of back line sensor (float).
  * @param controlSignal_left: Left control signal (int32_t).
  * @param controlSignal_right: Right control signal (int32_t).
  */
-void update_robotStates(struct sensorData_t* sensorData, struct positionData_t* position_states, struct robotStates_t* robot_states, float front_sensor_value, float back_sensor_value, int32_t controlSignal_left, int32_t controlSignal_right);
+void update_robotStates(struct sensorData_t* sensorData, struct positionData_t* position_states, struct robotStates_t* robot_states, int32_t controlSignal_left, int32_t controlSignal_right);
 
 /**
  * @brief Set the motor commands.
@@ -113,5 +116,6 @@ void line_lost_reverse(void);
  * @see defines.h
  */
 void motor_pins_setup();
+
 #endif
 

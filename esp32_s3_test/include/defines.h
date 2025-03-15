@@ -1,3 +1,12 @@
+/**
+* Description: Contains defines for the project.
+* 
+* Note:
+* 
+* Usage:
+* Import the file in all .h files that need to use the defines(Often all .h files).
+**/
+
 #ifndef DEFINES_H
 #define DEFINES_H
 
@@ -5,11 +14,16 @@
 //Debugging
 #define DEBUG_MODE                  (1)  // 0: OFF, 1: ON
 
-
 // Clamping
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
 #define MAX(a, b) (((a) > (b)) ? (a) : (b))
 #define CLAMP(x, lower, upper) (MIN((upper), MAX((x), (lower))))
+
+// Robot constants
+#define ROBOT_LENGTH                  (0.3) // In meters
+#define ROBOT_WIDTH                   (0.2) // In meters
+#define FRONT_SENSOR_NR               (10)  // Number of IR sensors in front of the robot
+#define BACK_SENSOR_NR                (5)   // Number of IR sensors in back of the robot
 
 // Motor
 #define BASE_SPEED                  (100)
@@ -63,6 +77,9 @@
 #define I2C_SCL                     (47)
 #define LEFT_ADR                    (0x09)
 #define RIGHT_ADR                   (0x0A)
+#define FRONT_SENSOR_EPROM_ADR      (0x00)
+#define BACK_SENSOR_EPROM_ADR       (0x0C)
+#define ALL_BLACK_VALUE             (1000) // Figure out a value and a range to signal the end line is found
 
 // PID
 #define STD_SPEED_KP                (1.0)
@@ -78,5 +95,7 @@
 #define AGR_PWM_KI                  (0.0)
 #define AGR_PWM_KD                  (0.0)
 
+// Filters
+#define LP_ALPHA                    (0.01)
 
 #endif

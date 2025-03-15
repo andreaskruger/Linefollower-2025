@@ -49,27 +49,33 @@ class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # -----------------------
         # Socket
+        # -----------------------
         self.setWindowTitle("ESP32 Data Viewer")
-        self.sock = None  # Will hold our TCP socket once connected
-        self.read_buffer = ""  # Buffer for partial reads from socket
+        self.sock = None            # Will hold our TCP socket once connected
+        self.read_buffer = ""       # Buffer for partial reads from socket
         self.socket_timer_interupt = 200
 
+        # -----------------------
         # Calibration vars
+        # -----------------------
         SRC_DIR = os.path.dirname(os.path.abspath(str(sys.modules['__main__'].__file__)))
         APPLICATION_DIR = Path(SRC_DIR).parent.absolute()
         self.cal_pwm = False
         self.cal_pwm_file_path = os.path.join(APPLICATION_DIR, "PWM_calibration.txt")
         self.cal_pwm_values = {}
 
-        # We’ll track data for plotting
+        # -----------------------
+        # Track data for plotting
+        # -----------------------
         self.plot_x = []
         self.plot_y = []
         self.timeSinceStart = 0
         self.previous_graph_key = None
         self.data = {}
         self.previous_map_pts = []
-        self.counter = 0                            # increments each time we get new data
+        self.counter = 0                            # Increments each time we get new data
         self.start_state = "stop"
         self.connect_state = "disconnect"
 
@@ -88,7 +94,9 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         self.setMinimumSize(self.main_window_minWidth, self.main_window_minHeight)
 
+        # -----------------------
         # Layouts
+        # -----------------------
         main_layout = QVBoxLayout(central_widget)
         get_pid_layout = QHBoxLayout()
         set_pid_layout = QHBoxLayout()
@@ -98,16 +106,36 @@ class MainWindow(QMainWindow):
         group_layout_2 = QVBoxLayout()
         mainButton_layout = QHBoxLayout()
 
+        # -----------------------
+        # Add connection indicators
+        # -----------------------
+        self.connection_on_path = os.path.join(APPLICATION_DIR, "resources", "connected.jpg")
+        self.connection_off_path = os.path.join(APPLICATION_DIR, "resources", "notConnected.jpg")
+        self.connection_light_state = False
+        self.connection_light = QLabel()
+        self.connection_light.setPixmap(QPixmap(self.connection_off_path))
+        self.connection_light.setScaledContents(True)
+        self.connection_light.setFixedSize(30, 30)
+        # main_layout.addWidget(self.connection_light, stretch=0, alignment=Qt.AlignLeft)
+
+        # -----------------------
+        # Add State indicator
+        # -----------------------
+        self.robot_state_label = QLabel("Robot state: ")
+        # main_layout.addWidget(self.robot_state_label, stretch=100, alignment=Qt.AlignLeft)
+        
+        # -----------------------
         # Dropdown
+        # -----------------------
         self.dropdown = QComboBox()
         self.dropdown.setFixedSize(316, 30)
-
-        # Pre-populate with the AP SSID we want
-        self.dropdown.addItem("MyESP32AP")  
-        self.dropdown.addItem("OtherAP")    # example extra
+        self.dropdown.addItem("MyESP32AP")      # Pre-populate with the AP SSID we want # NOTE: Change this to find local network and add them to the list
+        self.dropdown.addItem("OtherAP")        # Example SSID
         main_layout.addWidget(self.dropdown)
 
-        # Connect Button
+        # -----------------------
+        # Connect Buttons
+        # -----------------------
         self.connect_button = QPushButton("Connect")
         self.connect_button.setFixedSize(316, 30)
         self.connect_button.clicked.connect(self.handle_connect_clicked)
@@ -139,7 +167,7 @@ class MainWindow(QMainWindow):
         self.get_pid_button = QPushButton("Get PID")
         self.get_pid_button.setFixedSize(100, 30)
         self.get_pid_button.clicked.connect(self.handle_get_pid_clicked)
-        self.get_pid_label = QLabel("PID parameters:")
+        self.get_pid_label = QLabel("PID parameters: ")
         get_pid_layout.addWidget(self.get_pid_button, stretch=1, alignment=Qt.AlignLeft)
         get_pid_layout.addWidget(self.get_pid_label, stretch=100, alignment=Qt.AlignLeft)
 
@@ -163,7 +191,9 @@ class MainWindow(QMainWindow):
 
         main_layout.addLayout(mainButton_layout)
 
+        # -----------------------
         # Tabs
+        # -----------------------
         self.tabs = QTabWidget()
         main_layout.addWidget(self.tabs)
 
@@ -192,22 +222,27 @@ class MainWindow(QMainWindow):
         self.legendItem = pg.LegendItem()
         self.tab2_layout.addWidget(self.graph_widget)
 
-        # self.tabs.addTab(self.tab2, "Graph")
-
         # --- Tab 3: Canvas for drawing maps ---
         self.tab3 = QWidget()
         self.tab3_layout = QVBoxLayout(self.tab3)
         self.draw_canvas = QWidget()
         self.label = QLabel(self.draw_canvas)
         self.tab3_layout.addWidget(self.draw_canvas)
-        # self.tabs.addTab(self.tab3, "Map")
-        # self.init_map()
 
         # Create a timer to poll the socket for incoming data
         print("Create timer")
         self.socket_timer = QTimer()
         self.socket_timer.setInterval(self.socket_timer_interupt)
         self.socket_timer.timeout.connect(self.read_from_socket)
+
+    def update_connection_light(self, state):
+        if state:
+            self.connection_light.setPixmap(QPixmap(self.connection_on_path))
+        else:
+            self.connection_light.setPixmap(QPixmap(self.connection_off_path))
+
+    def update_state_label(self, state):
+        self.robot_state_label.setText(f"Robot state: {state}")    
 
     def clear_map(self):
         self.label.clear()
@@ -422,6 +457,7 @@ class MainWindow(QMainWindow):
                 self.sock = None
         else:
             self.connect_state = "disconnect"
+            self.sock.sendall(f"dissconnect".encode('utf-8'))
             self.connect_button.setText("Connect")
             self.sock.close()
             self.sock = None
@@ -490,39 +526,43 @@ class MainWindow(QMainWindow):
                 data_dict = self.process_incoming_line(line)
         self.read_buffer = ""
 
-        if not self.cal_pwm:
-            # Update the table
-            self.update_table(data_dict)
-
-            # Update the data dictionary
-            current_time = time.time()
-            self.timeSinceStart = current_time - self.startTime
-
-            self.plot_x.append(self.timeSinceStart)
-            for key, value in data_dict.items():
-                self.data[key] = round(float(value), 3)
-
-            x_pos = 0
-            y_pos = 0
-            velocity = 0
-            map_pts = []
-            for key, value in self.data.items():
-                if key == "X position":
-                    x_pos = value
-                elif key == "Y position":
-                    y_pos = value
-                elif key == "Velocity":
-                    velocity = value
-                    
-            map_pts.append((x_pos, y_pos))
-            self.update_graph()
-            self.draw_map(map_pts, (x_pos, y_pos), velocity)
-
+        # Check if the message contains data or information
+        if "stateUpdate" in  data_dict["description"]:
+            self.update_state_label(data_dict["description"])
         else:
-            self.cal_pwm_values = data_dict
-            self.update_table(data_dict)
-            with open(self.cal_pwm_file_path, "a") as file:
-                file.write(f"{data_dict['name']} PWM: {round(data_dict['PWM'], 2)}, RPM: {round(data_dict['RPM'], 2)}\n")
+            if not self.cal_pwm:
+                # Update the table
+                self.update_table(data_dict)
+
+                # Update the data dictionary
+                current_time = time.time()
+                self.timeSinceStart = current_time - self.startTime
+
+                self.plot_x.append(self.timeSinceStart)
+                for key, value in data_dict.items():
+                    self.data[key] = round(float(value), 3)
+
+                x_pos = 0
+                y_pos = 0
+                velocity = 0
+                map_pts = []
+                for key, value in self.data.items():
+                    if key == "X position":
+                        x_pos = value
+                    elif key == "Y position":
+                        y_pos = value
+                    elif key == "Velocity":
+                        velocity = value
+                        
+                map_pts.append((x_pos, y_pos))
+                self.update_graph()
+                self.draw_map(map_pts, (x_pos, y_pos), velocity)
+
+            else:
+                self.cal_pwm_values = data_dict
+                self.update_table(data_dict)
+                with open(self.cal_pwm_file_path, "a") as file:
+                    file.write(f"{data_dict['name']} PWM: {round(data_dict['PWM'], 2)}, RPM: {round(data_dict['RPM'], 2)}\n")
 
     def process_incoming_line(self, chunk: str=""):
         """
@@ -597,6 +637,19 @@ def apply_dark_mode(app):
     app.setPalette(dark_palette)
 
 def main():
+    # Make sure that file exists
+    SRC_DIR = os.path.dirname(os.path.abspath(str(sys.modules['__main__'].__file__)))
+    APPLICATION_DIR = Path(SRC_DIR).parent.absolute()
+    settings_file_exists = os.path.exists(os.path.join(SRC_DIR , 'settings.py'))
+    calibration_file_exists = os.path.exists(os.path.join(SRC_DIR , 'PWM_calibration.txt'))
+    if calibration_file_exists:
+        print("PWM_calibration.txt file exists")
+    else:
+        print("PWM_calibration.txt file does not exist. Creating a new file")
+        CD = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        with open(os.path.join(SRC_DIR , 'PWM_calibration.txt'), 'w') as f:
+            f.write(f"Calibration file created: {CD}\n")
+
     app = QApplication(sys.argv)
     apply_dark_mode(app)
     window = MainWindow()

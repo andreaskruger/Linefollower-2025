@@ -1,5 +1,5 @@
 /**
-* Description:
+* Description: Handles the attachment and setup of interupt routines for buttons, sensors and timers.
 * 
 * Note:
 * 

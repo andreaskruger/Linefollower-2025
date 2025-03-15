@@ -9,9 +9,10 @@
 
 String construct_message(struct robotStates_t* robotStates){
   String message = "";
-  message += "X position:";
+  message += "description:data,";
+  message += "X-position:";
   message += robotStates->x_pos;
-  message += ",Y posistion:";
+  message += ",Y-posistion:";
   message += robotStates->y_pos;
   message += ",Velocity:";
   message += robotStates->velocity;
@@ -135,5 +136,30 @@ void sendMessage(struct robotStates_t* robotStates, WiFiClient client){
   // Construct message from robotStates struct
   String message = construct_message(robotStates);
   // Send message over TCP
+  client.print(message);
+}
+
+void send_finishLine_found(WiFiClient client){
+  String message = "Finish line found\n";
+  client.print(message);
+}
+
+void sendState(WiFiClient client, int32_t state){
+  const char* stateNames[] = {
+    "STATE_INIT",
+    "STATE_IDLE",
+    "STATE_RUNNING",
+    "STATE_ERROR",
+    "STATE_FINISHED",
+    "STATE_CALIBRATING",
+    "STATE_TESTING_PWM",
+    "STATE_STOP",
+    "STATE_CLIENT_DISCONNECTED",
+    "STATE_LINE_LOST_REVERSE"
+  };
+
+  String message = "description:stateUpdate-";
+  message += stateNames[state];
+  message += "\n";
   client.print(message);
 }

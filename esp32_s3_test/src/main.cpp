@@ -64,6 +64,7 @@ struct PID_t speed_pid;
 struct positionData_t positionData;
 struct robotStates_t robotStates;
 struct messageFields_t messageParts;
+struct lowPassFilter_t LP_front_sensor_filter;
 struct STD_PID_t std_pid_values = {STD_SPEED_KP,
                                    STD_SPEED_KI, 
                                    STD_SPEED_KD, 
@@ -80,6 +81,7 @@ int32_t timer_counter = 0;
 void startRunning(){
     USBSerial.printf("Start command received!\n");
     current_state = STATE_FINISHED;
+    sendState(client, (int32_t)current_state);
 }
 
 void stopRunning(){
@@ -146,6 +148,9 @@ void run_idle(){
         set_motor_commands(RUN, LEFT_MOTOR, messageParts.floatPart_1);
         set_motor_commands(RUN, RIGHT_MOTOR, messageParts.floatPart_1);
     }
+    else if (returnCode == 6){
+        sendState(client, (int32_t)current_state);
+    }
     else if (returnCode == 5){
         sendPIDparams(client, &pwm_pid, &speed_pid);
     }
@@ -166,7 +171,35 @@ void run_idle(){
     }
 }
 
-void run(){
+void run_simple(){
+    int32_t returnCode = receiveMessage(client, &messageParts);
+    if (returnCode == 2){
+        stopRunning();
+    }
+    else{
+        lineSensor_value_front(&sensorData);
+        lineSensor_value_back(&sensorData);
+        update_encoder(&sensorData, &encoders_struct);
+        if (timer_counter <= 9){
+            timer_counter = 0;
+        }
+        calculate_PID(&pwm_pid, sensorData.lineSensor_value_front);
+
+        update_robotStates(&sensorData, &positionData, &robotStates, pwm_pid.output, pwm_pid.output);
+        set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
+        set_motor_commands(RUN, RIGHT_MOTOR, robotStates.right_controlSignal);
+        sendMessage(&robotStates, client);
+        if (robotStates.lineSensor_value_front == ALL_BLACK_VALUE){// Make this a range and more robust so not just a "unlucky" sensor reading is a false finish line.
+            stop_motor_commands();
+            send_finishLine_found(client);
+            current_state = STATE_IDLE;
+        }else{
+            current_state = STATE_FINISHED;
+        }
+    }
+}
+
+void run_advanced(){
     int32_t returnCode = receiveMessage(client, &messageParts);
     if (returnCode == 2){
         stopRunning();
@@ -181,14 +214,18 @@ void run(){
         }
         calculate_PID(&left_pwm_pid, speed_pid.output);
         calculate_PID(&right_pwm_pid, speed_pid.output);
-        update_robotStates(&sensorData, &positionData, &robotStates, sensorData.lineSensor_value_front, sensorData.lineSensor_value_back, left_pwm_pid.output, right_pwm_pid.output);
-        
-        calculate_PID(&pwm_pid, sensorData.lineSensor_value_front);
-        update_robotStates(&sensorData, &positionData, &robotStates, sensorData.lineSensor_value_front, sensorData.lineSensor_value_back, pwm_pid.output, pwm_pid.output);
+
+        update_robotStates(&sensorData, &positionData, &robotStates, left_pwm_pid.output, right_pwm_pid.output);
         set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
         set_motor_commands(RUN, RIGHT_MOTOR, robotStates.right_controlSignal);
         sendMessage(&robotStates, client);
-        current_state = STATE_FINISHED;
+        if (robotStates.lineSensor_value_front == ALL_BLACK_VALUE){// Make this a range and more robust so not just a "unlucky" sensor reading is a false finish line.
+            stop_motor_commands();
+            send_finishLine_found(client);
+            current_state = STATE_IDLE;
+        }else{
+            current_state = STATE_FINISHED;
+        }
     }
 }
 
@@ -221,7 +258,7 @@ void setup() {
     motor_pins_setup();
     read_dipSwitchConfig();
 
-    if (dip_configuration == DIP_11){
+    if (dip_configuration == DIP_11 or DIP_10){
         setupAccessPoint();
         USBSerial.printf("Waiting for client to connect... ");
         while (true){
@@ -240,9 +277,10 @@ void setup() {
     }
 
     // Setup encoders
+    USBSerial.printf("Setting up resolution and frequency for encoders...\n");
     analogWriteResolution(ENCODER_RESOLUTION);
     analogWriteFrequency(ENCODER_FREQUENCY);
-    initiate_structs(&sensorData, &encoders_struct, &pwm_pid, &left_pwm_pid, &right_pwm_pid, &speed_pid, &std_pid_values, &positionData, &robotStates);
+    initiate_structs(&sensorData, &encoders_struct, &pwm_pid, &left_pwm_pid, &right_pwm_pid, &speed_pid, &std_pid_values, &positionData, &robotStates, &LP_front_sensor_filter);
     setupEncoders(&encoders_struct);
 
     // Setup timer for interupt to run the main fsm
@@ -265,13 +303,18 @@ void loop() {
         run_idle();
         break;
     case STATE_RUNNING:
-        run();
+        if (dip_configuration == DIP_11){
+            run_simple();
+        }else if(dip_configuration == DIP_10){
+            run_advanced();
+        }
         break;
     case STATE_FINISHED:
         break;
     case STATE_STOP:
         stop_motor_commands();
         current_state = STATE_IDLE;
+        sendState(client, (int32_t)current_state);
         break;
     default:
         break;

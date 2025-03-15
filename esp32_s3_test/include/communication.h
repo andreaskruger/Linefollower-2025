@@ -84,7 +84,20 @@ void parseString(String input, struct messageFields_t* messageParts);
  */
 void sendPIDparams(WiFiClient client, struct PID_t* pid, struct PID_t* pid2);
 
+/**
+ * @brief Send a message to the client that the finish line has been found.
+ * 
+ * @param client: Pointer to the client.
+ */
+void send_finishLine_found(WiFiClient client);
 
+/**
+ * @brief Send a message to the client that contains the state that the robot is currently in.
+ * 
+ * @param client: Pointer to the client.
+ * @param state: State that the robot is currently in.
+ */
+void sendState(WiFiClient client, int32_t state);
 
 #endif
 

@@ -8,27 +8,31 @@
 
 
 void calculate_Position(struct positionData_t* positionData){
-    positionData->omega = (positionData->Vr - positionData->Vl)/(2*positionData->d);
-    positionData->V = (positionData->Vr + positionData->Vl)/2;
-    positionData->x_pos += (positionData->V*cos(positionData->omega))*positionData->dt;
-    positionData->y_pos += (positionData->V*sin(positionData->omega))*positionData->dt;
-    positionData->theta += positionData->omega*positionData->dt;
+    positionData->V = (positionData->Vl + positionData->Vr)/2;
+    positionData->omega_robot = (positionData->Vr - positionData->Vl)/ROBOT_WIDTH;
+    positionData->theta = positionData->omega_robot*positionData->dt;
+    positionData->x_pos += positionData->V*cos(positionData->theta)*positionData->dt;
+    positionData->y_pos += positionData->V*sin(positionData->theta)*positionData->dt;
+    positionData->theta += positionData->omega_robot*positionData->dt;
 }
 
 void calculate_velocity(struct positionData_t* positionData, struct sensorData_t* sensorData){
-    positionData->Vl = (WHEEL_CIRCUMFERENCE_SEGMENT*(sensorData->leftEncoderTick - sensorData->prev_leftEncoderTick)); // Add DT
-    positionData->Vr = (WHEEL_CIRCUMFERENCE_SEGMENT*(sensorData->rightEncoderTick - sensorData->prev_rightEncoderTick)); // Add DT
+    positionData->omega_l = (PI*((sensorData->leftEncoderTick - sensorData->prev_leftEncoderTick)*sensorData->dt))/MOTOR_POLES;
+    positionData->omega_r = (PI*((sensorData->rightEncoderTick - sensorData->prev_rightEncoderTick)*sensorData->dt))/MOTOR_POLES;
+    positionData->Vl = positionData->omega_l*WHEEL_DIAMETER;
+    positionData->Vr = positionData->omega_r*WHEEL_DIAMETER;
+
     sensorData->prev_leftEncoderTick = sensorData->leftEncoderTick;
     sensorData->prev_rightEncoderTick = sensorData->rightEncoderTick;
 }
 
-void update_robotStates(struct sensorData_t* sensorData, positionData_t* position_states, struct robotStates_t* robot_states, float front_sensor_value, float back_sensor_value, int32_t controlSignal_left, int32_t controlSignal_right){
+void update_robotStates(struct sensorData_t* sensorData, positionData_t* position_states, struct robotStates_t* robot_states, int32_t controlSignal_left, int32_t controlSignal_right){
     calculate_velocity(position_states, sensorData);
     calculate_Position(position_states);
-    robot_states->lineSensor_value_front = front_sensor_value;
-    robot_states->lineSensor_value_back = back_sensor_value;
-    robot_states->left_controlSignal = robot_states->baseSpeed - controlSignal_left; // NOTE: Check if this is correct, no idea if it is + or -
-    robot_states->right_controlSignal = robot_states->baseSpeed + controlSignal_right; // NOTE: Check if this is correct, no idea if it is + or -
+    robot_states->lineSensor_value_front = sensorData->lineSensor_value_front;
+    robot_states->lineSensor_value_back = sensorData->lineSensor_value_back;
+    robot_states->left_controlSignal = robot_states->baseSpeed - controlSignal_left;    // NOTE: Check if this is correct, no idea if it is + or -
+    robot_states->right_controlSignal = robot_states->baseSpeed + controlSignal_right;  // NOTE: Check if this is correct, no idea if it is + or -
     robot_states->velocity = position_states->V;
     robot_states->x_pos = position_states->x_pos;
     robot_states->y_pos = position_states->y_pos;

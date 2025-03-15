@@ -3,6 +3,7 @@
 
 */
 #include <Wire.h>
+#include <EEPROM.h>
 #include "sensors.h"
 #include "defines.h"
 
@@ -68,4 +69,26 @@ void calibrate_front_line_sensor(struct sensorData_t* sensorData){
 
 void calibrate_back_line_sensor(struct sensorData_t* sensorData){
   
+}
+
+void init_sensor_calibration_eeprom(uint32_t size){
+  EEPROM.begin(size);
+}
+
+void store_sensor_calibration_eeprom(struct sensorData_t* sensorData){        // NOTE: Add calibration for back sensors(sensor struct should change and be moer general and not have both back and front in one srtuct)
+  EEPROM.write(sensorData->start_adddress_calibration_front, 1);              // Write 1 to the first address to indicate that the calibration data is stored
+  for (size_t i = 1; i <= sensorData->front_sensor_size; i++){
+    EEPROM.write(sensorData->start_adddress_calibration_front + i, sensorData->front_calibration_data[i]);
+  }
+  EEPROM.commit();
+}
+
+void read_sensor_calibration_eeprom(struct sensorData_t* sensorData){
+  if (EEPROM.read(sensorData->start_adddress_calibration_front) == 1){
+    for (size_t i = 1; i <= sensorData->front_sensor_size; i++){
+      sensorData->front_calibration_data[i] = EEPROM.read(sensorData->start_adddress_calibration_front + i);
+    }
+  }else{
+    USBSerial.printf("No calibration data found\n");
+  }
 }
