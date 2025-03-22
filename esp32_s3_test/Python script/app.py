@@ -53,9 +53,9 @@ class MainWindow(QMainWindow):
         # Socket
         # -----------------------
         self.setWindowTitle("ESP32 Data Viewer")
-        self.sock = None            # Will hold our TCP socket once connected
-        self.read_buffer = ""       # Buffer for partial reads from socket
-        self.socket_timer_interupt = 200
+        self.sock = None                    # Will hold our TCP socket once connected
+        self.read_buffer = ""               # Buffer for partial reads from socket
+        self.socket_timer_interupt = 200   # Timer for interupt for reading from socket
 
         # -----------------------
         # Calibration vars
@@ -74,6 +74,7 @@ class MainWindow(QMainWindow):
         self.timeSinceStart = 0
         self.previous_graph_key = None
         self.data = {}
+        self.map_pts = []
         self.previous_map_pts = []
         self.counter = 0                            # Increments each time we get new data
         self.start_state = "stop"
@@ -524,6 +525,8 @@ class MainWindow(QMainWindow):
             line = line.strip()
             if line:
                 data_dict = self.process_incoming_line(line)
+                break
+        
         self.read_buffer = ""
 
         # Check if the message contains data or information
@@ -546,7 +549,7 @@ class MainWindow(QMainWindow):
                 x_pos = 0
                 y_pos = 0
                 velocity = 0
-                map_pts = []
+
                 for key, value in self.data.items():
                     if key == "X position":
                         x_pos = value
@@ -555,9 +558,9 @@ class MainWindow(QMainWindow):
                     elif key == "Velocity":
                         velocity = value
                         
-                map_pts.append((x_pos, y_pos))
+                self.map_pts.append((x_pos, y_pos))
                 self.update_graph()
-                self.draw_map(map_pts, (x_pos, y_pos), velocity)
+                self.draw_map(self.map_pts, (x_pos, y_pos), velocity)
 
             else:
                 self.cal_pwm_values = data_dict

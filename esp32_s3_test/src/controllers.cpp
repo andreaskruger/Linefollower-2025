@@ -4,12 +4,14 @@
 */
 #include "controllers.h"
 #include "defines.h"
+#include "filters.h"
 
-void calculate_PID(struct PID_t* pid, float input){
+void calculate_PID(struct PID_t* pid, struct lowPassFilter_t* filter, float input){
     static float prev_err = 0;
     float err = (float)pid->setpoint - (float)input;
     float P = pid->Kp * err;
     float D = pid->Kd * (err - prev_err);
+    applyLPFilter(filter, D);
     int32_t out = (int32_t)(P + D);
     prev_err = err;
 

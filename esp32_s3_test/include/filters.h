@@ -11,6 +11,7 @@
 #define FILTERS_H
 #include <Arduino.h>
 
+
 /**
  * @brief Struct to store low pass filter parameters.
  * 
@@ -25,8 +26,8 @@ struct lowPassFilter_t{
 /**
  * @brief Struct to store low pass filter parameters.
  * 
- * @param alpha: Filter constant (float).
- * @param output: Filtered output (float).
+ * @param filter: Filter pointer to filter struct.
+ * @param input: Input (float).
  */
 void applyLPFilter(struct lowPassFilter_t* filter, float input);
 

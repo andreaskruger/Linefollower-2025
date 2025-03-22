@@ -3,7 +3,7 @@
 #include "defines.h"
 
 
-void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* encoderData, struct PID_t* pwm_pid, struct PID_t* right_pwm_pid, struct PID_t* left_pwm_pid, struct PID_t* speed_pid, struct STD_PID_t* std_pid_values, struct positionData_t* positionData, struct robotStates_t* robotStates, struct lowPassFilter_t* lowPassFilter){
+void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* encoderData, struct PID_t* pwm_pid, struct PID_t* right_pwm_pid, struct PID_t* left_pwm_pid, struct PID_t* speed_pid, struct STD_PID_t* std_pid_values, struct positionData_t* positionData, struct robotStates_t* robotStates, struct lowPassFilter_t* lowPassFilter_front, struct lowPassFilter_t* lowPassFilter_back){
     USBSerial.printf("Initiating sensor data struct...\n");
     sensorData->prev_leftEncoderTick = 0;
     sensorData->prev_rightEncoderTick = 0;
@@ -26,6 +26,7 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     encoderData->ENC_2_tick = 0;
 
     USBSerial.printf("Initiating PWM-PID struct...\n");
+    pwm_pid->setpoint = 5000.0;
     pwm_pid->output = 0.0;
     pwm_pid->error = 0;
     pwm_pid->error_prev = 0;
@@ -35,6 +36,7 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     pwm_pid->Kd = std_pid_values->pwm_Kd;
 
     USBSerial.printf("Initiating right PWM-PID struct...\n");
+    right_pwm_pid->setpoint = 5000.0;
     right_pwm_pid->output = 0.0;
     right_pwm_pid->error = 0;
     right_pwm_pid->error_prev = 0;
@@ -44,6 +46,7 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     right_pwm_pid->Kd = std_pid_values->pwm_Kd;
 
     USBSerial.printf("Initiating left PWM-PID struct...\n");
+    left_pwm_pid->setpoint = 5000.0;
     left_pwm_pid->output = 0.0;
     left_pwm_pid->error = 0;
     left_pwm_pid->error_prev = 0;
@@ -53,6 +56,7 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     left_pwm_pid->Kd = std_pid_values->pwm_Kd;
 
     USBSerial.printf("Initiating speed-PID struct...\n");
+    speed_pid->setpoint = 0.0;
     speed_pid->output = 0.0;
     speed_pid->error = 0;
     speed_pid->error_prev = 0;
@@ -86,7 +90,10 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     robotStates->message = "";
 
     USBSerial.printf("Initiating low pass filter struct...\n");
-    lowPassFilter->alpha = LP_ALPHA;
-    lowPassFilter->output = 0.0;
+    
+    lowPassFilter_front->alpha = LP_ALPHA;
+    lowPassFilter_front->output = 0.0;
+    lowPassFilter_back->alpha = LP_ALPHA;
+    lowPassFilter_back->output = 0.0;
 }
 

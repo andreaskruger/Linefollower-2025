@@ -37,9 +37,9 @@ void lineSensor_value_front(struct sensorData_t* sensorData){
     denom += val;
   }
   sensorData->lineSensor_value_front = (uint32_t)(num / denom);
-  #if DEBUG_MODE == 1
+  /* #if DEBUG_MODE == 1
     USBSerial.printf("Line sensor value front: %d\n", sensorData->lineSensor_value_front);
-  #endif
+  #endif */
 }
 
 void lineSensor_value_back(struct sensorData_t* sensorData){
@@ -56,10 +56,11 @@ void lineSensor_value_back(struct sensorData_t* sensorData){
     num += back_buffer[i] * i * 1000;
     denom += back_buffer[i];
   } 
+  
   sensorData->lineSensor_value_back = (num/denom);
-  #if DEBUG_MODE == 1
+  /* #if DEBUG_MODE == 1
     USBSerial.printf("Line sensor value back: %d\n", sensorData->lineSensor_value_back);
-  #endif
+  #endif */
 }
 
 void update_encoder(struct sensorData_t* sensorData, struct encoderData_t* encoderData){

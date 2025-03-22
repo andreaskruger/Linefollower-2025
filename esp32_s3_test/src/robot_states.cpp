@@ -14,17 +14,21 @@ void calculate_Position(struct positionData_t* positionData){
     positionData->x_pos += positionData->V*cos(positionData->theta)*positionData->dt;
     positionData->y_pos += positionData->V*sin(positionData->theta)*positionData->dt;
     positionData->theta += positionData->omega_robot*positionData->dt;
+    #if DEBUG_MODE == 1
+        USBSerial.printf("X position: %f\n", positionData->x_pos);
+        USBSerial.printf("Y position: %f\n", positionData->y_pos);
+#endif
 }
 
 void calculate_velocity(struct positionData_t* positionData, struct sensorData_t* sensorData){
-    positionData->omega_l = (PI*((sensorData->leftEncoderTick - sensorData->prev_leftEncoderTick)*sensorData->dt))/MOTOR_POLES;
-    positionData->omega_r = (PI*((sensorData->rightEncoderTick - sensorData->prev_rightEncoderTick)*sensorData->dt))/MOTOR_POLES;
+    positionData->omega_l = (PI*((float)(sensorData->leftEncoderTick - sensorData->prev_leftEncoderTick)*sensorData->dt))/MOTOR_POLES;
+    positionData->omega_r = (PI*((float)(sensorData->rightEncoderTick - sensorData->prev_rightEncoderTick)*sensorData->dt))/MOTOR_POLES;
     positionData->Vl = positionData->omega_l*WHEEL_DIAMETER;
     positionData->Vr = positionData->omega_r*WHEEL_DIAMETER;
     
     #if DEBUG_MODE == 1
-        USBSerial.printf("Left wheel velocity: %d\n", positionData->Vl);
-        USBSerial.printf("Righ wheel velocity: %d\n", positionData->Vr);
+        USBSerial.printf("Right wheel velocity: %f\n", positionData->Vr);
+        USBSerial.printf("Left wheel velocity: %f\n", positionData->Vl);
     #endif
 
     sensorData->prev_leftEncoderTick = sensorData->leftEncoderTick;
@@ -53,22 +57,22 @@ void set_motor_commands(int stopCommand, int motor_index, int motor_pwm){
     else{ // NOTE: Check if this is correct, done very quickly
         if (motor_index == LEFT_MOTOR){
             if (motor_pwm > 0){
-                analogWrite(MOTL_1, motor_pwm);
-                analogWrite(MOTL_2, 0);
+                analogWrite(MOTL_1, 0);
+                analogWrite(MOTL_2, motor_pwm);
             }
             else{
-                analogWrite(MOTL_1, 0);
-                analogWrite(MOTL_2, -motor_pwm);
+                analogWrite(MOTL_1, -motor_pwm);
+                analogWrite(MOTL_2, 0);
             }
         }
         else if (motor_index == RIGHT_MOTOR){
             if (motor_pwm > 0){
-                analogWrite(MOTR_1, 0);
-                analogWrite(MOTR_2, motor_pwm);
+                analogWrite(MOTR_1, motor_pwm);
+                analogWrite(MOTR_2, 0);
             }
             else{
-                analogWrite(MOTR_1, -motor_pwm);
-                analogWrite(MOTR_2, 0);
+                analogWrite(MOTR_1, 0);
+                analogWrite(MOTR_2, -motor_pwm);
             }
         }
     }

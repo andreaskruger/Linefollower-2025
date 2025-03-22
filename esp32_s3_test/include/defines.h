@@ -12,7 +12,7 @@
 
 /*Global Defines*/
 //Debugging
-#define DEBUG_MODE                  (1)  // 0: OFF, 1: ON
+#define DEBUG_MODE                  (0)  // 0: OFF, 1: ON
 
 // Clamping
 #define MIN(a, b) (((a) < (b)) ? (a) : (b))
@@ -20,17 +20,17 @@
 #define CLAMP(x, lower, upper) (MIN((upper), MAX((x), (lower))))
 
 // Robot constants
-#define ROBOT_LENGTH                  (0.3) // In meters
-#define ROBOT_WIDTH                   (0.2) // In meters
-#define FRONT_SENSOR_NR               (10)  // Number of IR sensors in front of the robot
-#define BACK_SENSOR_NR                (5)   // Number of IR sensors in back of the robot
+#define ROBOT_LENGTH                  (0.3f) // In meters
+#define ROBOT_WIDTH                   (0.2f) // In meters
+#define FRONT_SENSOR_NR               (10)   // Number of IR sensors in front of the robot
+#define BACK_SENSOR_NR                (5)    // Number of IR sensors in back of the robot
 
 // Motor
-#define BASE_SPEED                  (100)
-#define MOTOR_POLES (24)                                                // Number of poles is 12, isr on "change" -> "24" poles 
-#define WHEEL_DIAMETER (0.3)                                            // in dm
-#define WHEEL_CIRCUMFERENCE (2.0*PI*WHEEL_DIAMETER)                     // in dm
-#define WHEEL_CIRCUMFERENCE_SEGMENT (WHEEL_CIRCUMFERENCE/MOTOR_POLES)   // in dm
+#define BASE_SPEED                  (100.0f)
+#define MOTOR_POLES                 (24.0f)                              // Number of poles is 12, isr on "change" -> "24" poles 
+#define WHEEL_DIAMETER              (0.03f)                              // in dm
+#define WHEEL_CIRCUMFERENCE         (2.0f*PI*WHEEL_DIAMETER)             // in dm
+#define WHEEL_CIRCUMFERENCE_SEGMENT (WHEEL_CIRCUMFERENCE/MOTOR_POLES)    // in dm
 #define MOTR_1                      (17)
 #define MOTR_2                      (18)
 #define MOTL_1                      (40)
@@ -58,7 +58,8 @@
     #define TIMER_FREQUENCY         (1000) // Resulting in 1ms timer
 #endif
 #define MC_CLOCK_SPEED              (80000000)
-#define DT                          (1/((MC_CLOCK_SPEED/TIMER_PRESCALER)/TIMER_FREQUENCY))
+#define FREQ                        (float)((MC_CLOCK_SPEED/TIMER_PRESCALER)/TIMER_FREQUENCY)
+#define DT                          (float)(1.0f/FREQ)
 
 // Buttons
 #define BT1                         (14)
@@ -81,26 +82,26 @@
 #define BACK_SENSOR_EPROM_ADR       (0x0C)
 #define NR_FRONT_PIXELS             (10)
 #define NR_BACK_PIXELS              (5)
-#define ALL_BLACK_VALUE             (1000) // Figure out a value and a range to signal the end line is found
+#define ALL_BLACK_VALUE             (1000.0f) // Figure out a value and a range to signal the end line is found
 
 // PID
-#define STD_SPEED_KP                (1.0)
-#define STD_SPEED_KI                (0.0)
-#define STD_SPEED_KD                (1.0)
-#define STD_PWM_KP                  (1.0)
-#define STD_PWM_KI                  (0.0)
-#define STD_PWM_KD                  (1.0)
-#define AGR_SPEED_KP                (0.0)
-#define AGR_SPEED_KI                (0.0)
-#define AGR_SPEED_KD                (0.0)
-#define AGR_PWM_KP                  (0.0)
-#define AGR_PWM_KI                  (0.0)
-#define AGR_PWM_KD                  (0.0)
+#define STD_SPEED_KP                (0.05f)
+#define STD_SPEED_KI                (0.0f)
+#define STD_SPEED_KD                (0.0f)
+#define STD_PWM_KP                  (0.05f)
+#define STD_PWM_KI                  (0.0f)
+#define STD_PWM_KD                  (0.0f)
+#define AGR_SPEED_KP                (0.0f)
+#define AGR_SPEED_KI                (0.0f)
+#define AGR_SPEED_KD                (0.0f)
+#define AGR_PWM_KP                  (0.0f)
+#define AGR_PWM_KI                  (0.0f)
+#define AGR_PWM_KD                  (0.0f)
 
 // Filters
-#define Fc                          (200.0)
-#define Tf                          (1.0/(2*PI*Fc))
-#define Ts                          (1.0/(((MC_CLOCK_SPEED/TIMER_PRESCALER)/TIMER_FREQUENCY)))
-#define LP_ALPHA                    (Ts/(Tf +Ts))
+#define Fc                          (200.0f)
+#define Tf                          (float)(1.0f/(2.0f*PI*Fc))
+#define Ts                          (float)(1.0f/(((MC_CLOCK_SPEED/TIMER_PRESCALER)/TIMER_FREQUENCY)))
+#define LP_ALPHA                    (float)(Ts/(Tf +Ts))
 
 #endif

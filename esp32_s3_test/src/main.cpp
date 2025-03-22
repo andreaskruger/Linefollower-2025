@@ -65,6 +65,7 @@ struct positionData_t positionData;
 struct robotStates_t robotStates;
 struct messageFields_t messageParts;
 struct lowPassFilter_t LP_front_sensor_filter;
+struct lowPassFilter_t LP_back_sensor_filter;
 struct STD_PID_t std_pid_values = {STD_SPEED_KP,
                                    STD_SPEED_KI, 
                                    STD_SPEED_KD, 
@@ -77,6 +78,7 @@ struct encoderData_t* encodePtr = &encoders_struct;
 
 // count the nr of timer inputs to create a slower PID
 int32_t timer_counter = 0;
+int32_t timer_counter_send = 0;
 
 void startRunning(){
     USBSerial.printf("Start command received!\n");
@@ -96,7 +98,8 @@ void client_disconnected(){
 void IRAM_ATTR onTimer(){
     if (current_state == STATE_FINISHED){
         current_state = STATE_RUNNING;
-        timer_counter +=1;
+        timer_counter += 1;
+        timer_counter_send += 1;
     }
     else if (current_state == STATE_IDLE){
         //Do nothing
@@ -172,7 +175,11 @@ void run_idle(){
 }
 
 void run_simple(){
-    int32_t returnCode = receiveMessage(client, &messageParts);
+    int32_t returnCode = 0;
+    if (timer_counter_send <= 100){
+        timer_counter_send = 0;
+        returnCode = receiveMessage(client, &messageParts);
+    }
     if (returnCode == 2){
         stopRunning();
     }
@@ -183,8 +190,8 @@ void run_simple(){
         if (timer_counter <= 9){
             timer_counter = 0;
         }
-        calculate_PID(&pwm_pid, sensorData.lineSensor_value_front);
-        
+        calculate_PID(&pwm_pid, &LP_front_sensor_filter, sensorData.lineSensor_value_front);
+
         update_robotStates(&sensorData, &positionData, &robotStates, pwm_pid.output, pwm_pid.output);
         set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
         set_motor_commands(RUN, RIGHT_MOTOR, robotStates.right_controlSignal);
@@ -209,11 +216,11 @@ void run_advanced(){
         lineSensor_value_back(&sensorData);
         update_encoder(&sensorData, &encoders_struct);
         if (timer_counter <= 9){
-            calculate_PID(&speed_pid, sensorData.lineSensor_value_front);       // This one should be 10x slower than the pwm PIDs
+            calculate_PID(&speed_pid, &LP_front_sensor_filter, sensorData.lineSensor_value_front);       // This one should be 10x slower than the pwm PIDs
             timer_counter = 0;
         }
-        calculate_PID(&left_pwm_pid, speed_pid.output);
-        calculate_PID(&right_pwm_pid, speed_pid.output);
+        calculate_PID(&left_pwm_pid, &LP_front_sensor_filter, speed_pid.output);
+        calculate_PID(&right_pwm_pid, &LP_front_sensor_filter, speed_pid.output);
 
         update_robotStates(&sensorData, &positionData, &robotStates, left_pwm_pid.output, right_pwm_pid.output);
         set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
@@ -253,6 +260,7 @@ void setup() {
     USBSerial.begin(115200);
     delay(4000);
     USBSerial.printf("Starting setup...\n");
+    USBSerial.printf("Loop delta time: %f\n", DT);
 
     buttons_setup();
     motor_pins_setup();
@@ -276,7 +284,7 @@ void setup() {
     USBSerial.printf("Setting up resolution and frequency for encoders...\n");
     analogWriteResolution(ENCODER_RESOLUTION);
     analogWriteFrequency(ENCODER_FREQUENCY);
-    initiate_structs(&sensorData, &encoders_struct, &pwm_pid, &left_pwm_pid, &right_pwm_pid, &speed_pid, &std_pid_values, &positionData, &robotStates, &LP_front_sensor_filter);
+    initiate_structs(&sensorData, &encoders_struct, &pwm_pid, &left_pwm_pid, &right_pwm_pid, &speed_pid, &std_pid_values, &positionData, &robotStates, &LP_front_sensor_filter, &LP_back_sensor_filter);
     setupEncoders(&encoders_struct);
 
     // Setup timer for interupt to run the main fsm
