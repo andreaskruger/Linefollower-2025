@@ -16,6 +16,7 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     sensorData->front_sensor_size = NR_FRONT_PIXELS;
     sensorData->back_sensor_size = NR_BACK_PIXELS;
     sensorData->dt = DT;
+    sensorData->total_value = 0;
 
     USBSerial.printf("Initiating encoder data struct...\n");
     encoderData->ENC_1_A = ENCODER_1_A;
@@ -26,7 +27,7 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     encoderData->ENC_2_tick = 0;
 
     USBSerial.printf("Initiating PWM-PID struct...\n");
-    pwm_pid->setpoint = 5000.0;
+    pwm_pid->setpoint = 4500.0;
     pwm_pid->output = 0.0;
     pwm_pid->error = 0;
     pwm_pid->error_prev = 0;
@@ -36,7 +37,7 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     pwm_pid->Kd = std_pid_values->pwm_Kd;
 
     USBSerial.printf("Initiating right PWM-PID struct...\n");
-    right_pwm_pid->setpoint = 5000.0;
+    right_pwm_pid->setpoint = 4500.0;
     right_pwm_pid->output = 0.0;
     right_pwm_pid->error = 0;
     right_pwm_pid->error_prev = 0;
@@ -46,7 +47,7 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     right_pwm_pid->Kd = std_pid_values->pwm_Kd;
 
     USBSerial.printf("Initiating left PWM-PID struct...\n");
-    left_pwm_pid->setpoint = 5000.0;
+    left_pwm_pid->setpoint = 4500.0;
     left_pwm_pid->output = 0.0;
     left_pwm_pid->error = 0;
     left_pwm_pid->error_prev = 0;

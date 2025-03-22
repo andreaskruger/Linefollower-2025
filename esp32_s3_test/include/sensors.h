@@ -62,15 +62,23 @@ struct sensorData_t{ // Change thi struct to be more general and have 1 defined 
     int32_t back_sensor_size;
     int32_t front_calibration_data[11];
     int32_t back_calibration_data[6];
+    int32_t total_value;
     float dt;
 };
+
+/**
+ * @brief Init i2c for reading front sensors.
+ * @param 
+ */
+void init_i2c_frontSensor();
 
 /**
  * @brief Read the value of the front line sensor.
  * @param sensorData: Pointer to the sensor data struct.
  * @see sensorData_t
  */
-void lineSensor_value_front(struct sensorData_t* sensorData);
+//void lineSensor_value_front(struct sensorData_t* sensorData);
+void lineSensor_value_front(struct sensorData_t* sensorData, uint8_t device_addr, uint8_t reg, size_t len, int32_t offset);
 
 /**
  * @brief Read the value of the back line sensor.

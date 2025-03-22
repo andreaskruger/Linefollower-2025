@@ -90,7 +90,7 @@ struct LQR_t{
  * @param pid: Pointer to the PID struct.
  * @param input: Input to the PID controller (float).
  */
-void calculate_PID(struct PID_t* pid, struct lowPassFilter_t* filter, float input);
+void calculate_PID(struct PID_t* pid, struct lowPassFilter_t* filter, int32_t input);
 
 
 /**

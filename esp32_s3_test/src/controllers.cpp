@@ -6,17 +6,16 @@
 #include "defines.h"
 #include "filters.h"
 
-void calculate_PID(struct PID_t* pid, struct lowPassFilter_t* filter, float input){
-    static float prev_err = 0;
+void calculate_PID(struct PID_t* pid, struct lowPassFilter_t* filter, int32_t input){
     float err = (float)pid->setpoint - (float)input;
     float P = pid->Kp * err;
-    float D = pid->Kd * (err - prev_err);
+    float D = pid->Kd * (err - (float)pid->error_prev);
+    float I = pid->Ki * (pid->error);
     applyLPFilter(filter, D);
-    int32_t out = (int32_t)(P + D);
-    prev_err = err;
+    int32_t out = (int32_t)(P + filter->output);
+    pid->error_prev = err;
 
-    pid->error = err;
-    pid->error_prev = prev_err;
+    pid->error += err;
     pid->output = out;
 }
 

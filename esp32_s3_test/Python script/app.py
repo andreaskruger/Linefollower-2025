@@ -56,6 +56,7 @@ class MainWindow(QMainWindow):
         self.sock = None                    # Will hold our TCP socket once connected
         self.read_buffer = ""               # Buffer for partial reads from socket
         self.socket_timer_interupt = 200   # Timer for interupt for reading from socket
+        self.waitingForRead = False
 
         # -----------------------
         # Calibration vars
@@ -495,10 +496,22 @@ class MainWindow(QMainWindow):
         """
         if not self.sock:
             return
+        
+        """ print("Time to read data!")
+        self.sock.sendall(f"readData".encode('utf-8'))
+        time.sleep(0.01)
+        # Wait for a response
+        while True:
+            data = self.sock.recv(1024)
+            if data:
+                break
+            time.sleep(0.01)  # Small delay to avoid high CPU usage """
 
         # # Non-blocking read: attempt to receive up to 1024 bytes
-        try:
+        """ try:
             data = self.sock.recv(1024)
+            print("Data was read!")
+            self.waitingForRead = False
         except BlockingIOError:
             # No data available
             return
@@ -507,9 +520,9 @@ class MainWindow(QMainWindow):
             self.sock.close()
             self.sock = None
             self.socket_timer.stop()
-            return
+            return """
 
-        if not data:
+        """ if not data:
             # No data means connection closed by server
             print("[INFO] Connection closed by ESP32.")
             self.sock.close()
@@ -567,7 +580,7 @@ class MainWindow(QMainWindow):
                 del data_dict["description"]
                 self.update_table(data_dict)
                 with open(self.cal_pwm_file_path, "a") as file:
-                    file.write(f"{data_dict['name']} PWM: {round(data_dict['PWM'], 2)}, RPM: {round(data_dict['RPM'], 2)}\n")
+                    file.write(f"{data_dict['name']} PWM: {round(data_dict['PWM'], 2)}, RPM: {round(data_dict['RPM'], 2)}\n") """
 
     def process_incoming_line(self, chunk: str=""):
         """

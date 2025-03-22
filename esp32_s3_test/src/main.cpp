@@ -77,13 +77,12 @@ struct STD_PID_t std_pid_values = {STD_SPEED_KP,
 struct encoderData_t* encodePtr = &encoders_struct;
 
 // count the nr of timer inputs to create a slower PID
-int32_t timer_counter = 0;
-int32_t timer_counter_send = 0;
+int32_t timer_counter = 9;
 
 void startRunning(){
     USBSerial.printf("Start command received!\n");
     current_state = STATE_FINISHED;
-    sendState(client, (int32_t)current_state);
+    //sendState(client, (int32_t)current_state);
 }
 
 void stopRunning(){
@@ -92,6 +91,8 @@ void stopRunning(){
 }
 
 void client_disconnected(){
+    USBSerial.printf("Disconnecting from client...\n");
+    client.stop();
     current_state = STATE_CLIENT_DISCONNECTED;
 }
 
@@ -99,7 +100,6 @@ void IRAM_ATTR onTimer(){
     if (current_state == STATE_FINISHED){
         current_state = STATE_RUNNING;
         timer_counter += 1;
-        timer_counter_send += 1;
     }
     else if (current_state == STATE_IDLE){
         //Do nothing
@@ -114,7 +114,7 @@ void IRAM_ATTR onTimer(){
         // Do nothing
     }
     else if (current_state == STATE_CLIENT_DISCONNECTED){
-        current_state = STATE_IDLE;
+        // Do nothing
     }
     else{
         Serial.printf("The running function is not yet completed, go to error state\n");
@@ -143,7 +143,10 @@ void read_dipSwitchConfig(){
 void run_idle(){
     int32_t returnCode = receiveMessage(client, &messageParts);
     // Remake this into a switch statement
-    if (returnCode == 8){
+    if (returnCode == 10){
+        client_disconnected();
+    }
+    else if (returnCode == 8){
         calibrate_front_line_sensor(&sensorData);
         calibrate_back_line_sensor(&sensorData);
     }
@@ -152,7 +155,7 @@ void run_idle(){
         set_motor_commands(RUN, RIGHT_MOTOR, messageParts.floatPart_1);
     }
     else if (returnCode == 6){
-        sendState(client, (int32_t)current_state);
+        //sendState(client, (int32_t)current_state);
     }
     else if (returnCode == 5){
         sendPIDparams(client, &pwm_pid, &speed_pid);
@@ -169,22 +172,20 @@ void run_idle(){
     else if (returnCode == 1){
         startRunning();
     }
+    else if(returnCode == 0){
+        // Do nothing
+    }
     else if(returnCode == -1){
         current_state = STATE_IDLE;
     }
 }
 
 void run_simple(){
-    int32_t returnCode = 0;
-    if (timer_counter_send <= 100){
-        timer_counter_send = 0;
-        returnCode = receiveMessage(client, &messageParts);
-    }
+    int32_t returnCode = receiveMessage(client, &messageParts);;
     if (returnCode == 2){
         stopRunning();
-    }
-    else{
-        lineSensor_value_front(&sensorData);
+    }else{
+        lineSensor_value_front(&sensorData, LEFT_ADR, 0, 10, 0);
         lineSensor_value_back(&sensorData);
         update_encoder(&sensorData, &encoders_struct);
         if (timer_counter <= 9){
@@ -195,44 +196,49 @@ void run_simple(){
         update_robotStates(&sensorData, &positionData, &robotStates, pwm_pid.output, pwm_pid.output);
         set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
         set_motor_commands(RUN, RIGHT_MOTOR, robotStates.right_controlSignal);
-        sendMessage(&robotStates, client);
-        if (robotStates.lineSensor_value_front == ALL_BLACK_VALUE){// Make this a range and more robust so not just a "unlucky" sensor reading is a false finish line.
+        //sendMessage(&robotStates, client);
+        if (sensorData.total_value > ALL_BLACK_VALUE){// Make this a range and more robust so not just a "unlucky" sensor reading is a false finish line.
             stop_motor_commands();
-            send_finishLine_found(client);
-            current_state = STATE_IDLE;
-        }else{
-            current_state = STATE_FINISHED;
+            //send_finishLine_found(client);
         }
+        current_state = STATE_FINISHED;
+    }
+    if (returnCode == 9){
+        //sendMessage(&robotStates, client);
+        USBSerial.printf("Send data to client");
     }
 }
 
 void run_advanced(){
-    int32_t returnCode = receiveMessage(client, &messageParts);
+    int32_t returnCode = receiveMessage(client, &messageParts);;
     if (returnCode == 2){
         stopRunning();
-    }
-    else{
-        lineSensor_value_front(&sensorData);
+    }else{
+        lineSensor_value_front(&sensorData, LEFT_ADR, 0, 10, 0);
         lineSensor_value_back(&sensorData);
         update_encoder(&sensorData, &encoders_struct);
-        if (timer_counter <= 9){
-            calculate_PID(&speed_pid, &LP_front_sensor_filter, sensorData.lineSensor_value_front);       // This one should be 10x slower than the pwm PIDs
+        if (timer_counter >= 9){
             timer_counter = 0;
+            calculate_PID(&speed_pid, &LP_front_sensor_filter, sensorData.lineSensor_value_front);
         }
-        calculate_PID(&left_pwm_pid, &LP_front_sensor_filter, speed_pid.output);
-        calculate_PID(&right_pwm_pid, &LP_front_sensor_filter, speed_pid.output);
+        left_pwm_pid.setpoint = speed_pid.output;
+        right_pwm_pid.setpoint = speed_pid.output;
 
+        calculate_PID(&left_pwm_pid, &LP_front_sensor_filter, positionData.Vl);
+        calculate_PID(&right_pwm_pid, &LP_front_sensor_filter, positionData.Vr);
         update_robotStates(&sensorData, &positionData, &robotStates, left_pwm_pid.output, right_pwm_pid.output);
         set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
         set_motor_commands(RUN, RIGHT_MOTOR, robotStates.right_controlSignal);
-        sendMessage(&robotStates, client);
-        if (robotStates.lineSensor_value_front == ALL_BLACK_VALUE){// Make this a range and more robust so not just a "unlucky" sensor reading is a false finish line.
+        //sendMessage(&robotStates, client);
+        if (sensorData.total_value > ALL_BLACK_VALUE){
             stop_motor_commands();
-            send_finishLine_found(client);
-            current_state = STATE_IDLE;
-        }else{
-            current_state = STATE_FINISHED;
+            //send_finishLine_found(client);
         }
+        current_state = STATE_FINISHED;
+    }
+    if (returnCode == 9){
+        //sendMessage(&robotStates, client);
+        USBSerial.printf("Send data to client");
     }
 }
 
@@ -256,7 +262,8 @@ void setupAccessPoint(){
 }
 
 void setup() {
-    Wire.begin(I2C_SDA, I2C_SCL, 100000);
+    //Wire.begin(I2C_SDA, I2C_SCL, I2C_READ_FREQ);
+    init_i2c_frontSensor();
     USBSerial.begin(115200);
     delay(4000);
     USBSerial.printf("Starting setup...\n");
@@ -318,7 +325,17 @@ void loop() {
     case STATE_STOP:
         stop_motor_commands();
         current_state = STATE_IDLE;
-        sendState(client, (int32_t)current_state);
+        //sendState(client, (int32_t)current_state);
+        break;
+    case STATE_CLIENT_DISCONNECTED:
+        if (!client || !client.connected()) {
+            WiFiClient newClient = server.available();
+            if (newClient) {
+                client = newClient;
+                USBSerial.printf("New client connected!\n");
+                break;
+            }
+        }
         break;
     default:
         break;

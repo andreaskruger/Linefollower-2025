@@ -6,6 +6,7 @@
 #include "defines.h"
 #include "sensors.h"
 
+force_stop_commands_t RUN_STATE = RUNNING;
 
 void calculate_Position(struct positionData_t* positionData){
     positionData->V = (positionData->Vl + positionData->Vr)/2;
@@ -14,10 +15,11 @@ void calculate_Position(struct positionData_t* positionData){
     positionData->x_pos += positionData->V*cos(positionData->theta)*positionData->dt;
     positionData->y_pos += positionData->V*sin(positionData->theta)*positionData->dt;
     positionData->theta += positionData->omega_robot*positionData->dt;
+
     #if DEBUG_MODE == 1
         USBSerial.printf("X position: %f\n", positionData->x_pos);
         USBSerial.printf("Y position: %f\n", positionData->y_pos);
-#endif
+    #endif
 }
 
 void calculate_velocity(struct positionData_t* positionData, struct sensorData_t* sensorData){
@@ -25,14 +27,13 @@ void calculate_velocity(struct positionData_t* positionData, struct sensorData_t
     positionData->omega_r = (PI*((float)(sensorData->rightEncoderTick - sensorData->prev_rightEncoderTick)*sensorData->dt))/MOTOR_POLES;
     positionData->Vl = positionData->omega_l*WHEEL_DIAMETER;
     positionData->Vr = positionData->omega_r*WHEEL_DIAMETER;
-    
+    sensorData->prev_leftEncoderTick = sensorData->leftEncoderTick;
+    sensorData->prev_rightEncoderTick = sensorData->rightEncoderTick;
+
     #if DEBUG_MODE == 1
         USBSerial.printf("Right wheel velocity: %f\n", positionData->Vr);
         USBSerial.printf("Left wheel velocity: %f\n", positionData->Vl);
     #endif
-
-    sensorData->prev_leftEncoderTick = sensorData->leftEncoderTick;
-    sensorData->prev_rightEncoderTick = sensorData->rightEncoderTick;
 }
 
 void update_robotStates(struct sensorData_t* sensorData, positionData_t* position_states, struct robotStates_t* robot_states, int32_t controlSignal_left, int32_t controlSignal_right){
@@ -40,15 +41,16 @@ void update_robotStates(struct sensorData_t* sensorData, positionData_t* positio
     calculate_Position(position_states);
     robot_states->lineSensor_value_front = sensorData->lineSensor_value_front;
     robot_states->lineSensor_value_back = sensorData->lineSensor_value_back;
-    robot_states->left_controlSignal = robot_states->baseSpeed - controlSignal_left;    // NOTE: Check if this is correct, no idea if it is + or -
-    robot_states->right_controlSignal = robot_states->baseSpeed + controlSignal_right;  // NOTE: Check if this is correct, no idea if it is + or -
+    robot_states->left_controlSignal = BASE_SPEED - controlSignal_left;    // NOTE: Check if this is correct, no idea if it is + or -
+    robot_states->right_controlSignal = BASE_SPEED + controlSignal_right;  // NOTE: Check if this is correct, no idea if it is + or -
     robot_states->velocity = position_states->V;
     robot_states->x_pos = position_states->x_pos;
     robot_states->y_pos = position_states->y_pos;
 }
 
 void set_motor_commands(int stopCommand, int motor_index, int motor_pwm){
-    if (stopCommand == STOP){
+    motor_pwm = CLAMP(motor_pwm, -2048, 2048);
+    if (stopCommand == STOP or RUN_STATE == STOPPING){
         analogWrite(MOTL_1, 0);
         analogWrite(MOTL_2, 0);
         analogWrite(MOTR_1, 0);
@@ -67,14 +69,24 @@ void set_motor_commands(int stopCommand, int motor_index, int motor_pwm){
         }
         else if (motor_index == RIGHT_MOTOR){
             if (motor_pwm > 0){
-                analogWrite(MOTR_1, motor_pwm);
-                analogWrite(MOTR_2, 0);
+                analogWrite(MOTR_1, 0);
+                analogWrite(MOTR_2, motor_pwm);
             }
             else{
-                analogWrite(MOTR_1, 0);
-                analogWrite(MOTR_2, -motor_pwm);
+                analogWrite(MOTR_1, -motor_pwm);
+                analogWrite(MOTR_2, 0);
             }
         }
+    }
+}
+
+void force_stop_motor_commands(void){
+    if (RUN_STATE == RUNNING){
+        RUN_STATE = STOPPING;
+        set_motor_commands(STOP, LEFT_MOTOR, 0);
+        set_motor_commands(STOP, RIGHT_MOTOR, 0);
+    } else{
+        RUN_STATE = RUNNING;
     }
 }
 

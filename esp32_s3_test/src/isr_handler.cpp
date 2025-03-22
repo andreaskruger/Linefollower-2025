@@ -4,20 +4,39 @@
 #include "isr_handler.h"
 #include "defines.h"
 #include "sensors.h"
+#include "robot_states.h"
 
 // Extern pointer to the encoder struct, used as shared instance of the encoder struct
 extern encoderData_t* encodePtr;
 
+//Debounce
+volatile unsigned long button_1_lastPressTime = 0;
+volatile unsigned long button_2_lastPressTime = 0;
+volatile unsigned long button_3_lastPressTime = 0;
+
 void IRAM_ATTR button1_isr(){
-  USBSerial.printf("Button 1 pressed\n");
+  unsigned long currentTime = millis();
+  if (currentTime - button_1_lastPressTime > DEBOUNCE_DELAY) {
+    button_1_lastPressTime = currentTime;
+    USBSerial.printf("Button 1 pressed! Stopping the motors and going into idle mode.\n");
+    force_stop_motor_commands();
+  }
 }
 
 void IRAM_ATTR button2_isr(){
-  USBSerial.printf("Button 2 pressed\n");
+  unsigned long currentTime = millis();
+  if (currentTime - button_2_lastPressTime > DEBOUNCE_DELAY) {
+    button_2_lastPressTime = currentTime;
+    USBSerial.printf("Button 2 pressed!\n");
+  }
 }
 
 void IRAM_ATTR button3_isr(){
-  USBSerial.printf("Button 3 pressed\n");
+  unsigned long currentTime = millis();
+  if (currentTime - button_3_lastPressTime > DEBOUNCE_DELAY) {
+    button_3_lastPressTime = currentTime;
+    USBSerial.printf("Button 3 pressed!.\n");
+  }
 }   
 
 void IRAM_ATTR dip_isr(){

@@ -119,6 +119,12 @@ int32_t receiveMessage(WiFiClient client, struct messageFields_t* messageParts){
       else if(messageParts->stringPart == "calibrate"){
         returnCode = 8;
       }
+      else if(messageParts->stringPart == "readData"){
+        returnCode = 9;
+      }
+      else if(messageParts->stringPart == "dissconnect"){
+        returnCode = 10;
+      }
       else{
         returnCode = 0;
       }

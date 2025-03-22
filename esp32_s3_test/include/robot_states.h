@@ -12,6 +12,12 @@
 #define ROBOTSTATES_H
 #include <Arduino.h>
 
+
+typedef enum{
+    RUNNING,
+    STOPPING
+} force_stop_commands_t;
+
 /**
  * @brief Struct to store position data and velocity data.
  * @param x_pos: X position (float).
@@ -104,6 +110,12 @@ void set_motor_commands(int stopCommand, int motor_index, int motor_pwm);
  * 
  */
 void stop_motor_commands(void);
+
+/**
+ * @brief Command the motors to stop.
+ * 
+ */
+void force_stop_motor_commands(void);
 
 /**
  * @brief Reverse the robot when the line is lost.
