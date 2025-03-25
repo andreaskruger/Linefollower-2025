@@ -2,7 +2,6 @@
 
 
 */
-//#include <Wire.h>
 #include <EEPROM.h>
 #include "sensors.h"
 #include "defines.h"
@@ -27,7 +26,7 @@ void init_i2c_frontSensor(){
   delay(1000);
 }
 
-void lineSensor_value_front(struct sensorData_t* sensorData, uint8_t device_addr, uint8_t reg, size_t len, int32_t offset){
+void lineSensor_value_front(struct sensorData_t* sensorData, uint8_t device_addr, uint8_t reg, size_t len){
   i2c_cmd_handle_t cmd = i2c_cmd_link_create();
   i2c_master_start(cmd);
   i2c_master_write_byte(cmd, (device_addr << 1) | I2C_MASTER_WRITE, true);
@@ -63,48 +62,11 @@ void lineSensor_value_front(struct sensorData_t* sensorData, uint8_t device_addr
 
   sensorData->total_value = (uint32_t)(denom);
   sensorData->lineSensor_value_front = (uint32_t)(num / denom);
-  //USBSerial.printf("Line sensor value front: %d. Denom: %d\n", sensorData->lineSensor_value_front, denom);
   #if DEBUG_MODE == 1
-    USBSerial.printf("Line sensor value front: %d\n", sensorData->lineSensor_value_front);
+    USBSerial.printf("Line sensor value front: %d. Denom: %d\n", sensorData->lineSensor_value_front, denom);
   #endif
 }
 
-/*
-void lineSensor_value_front(struct sensorData_t* sensorData){   
-  uint32_t num = 0;
-  uint32_t denom = 0;
-  Wire.beginTransmission(RIGHT_ADR);
-  //Wire.write(0);
-  Wire.endTransmission();
-  Wire.requestFrom(RIGHT_ADR, 10, 1);
-
-  for (size_t i = 0; i < sensorData->front_sensor_size; i++){
-    buf[i] = Wire.read();
-  }
-
-  Wire.beginTransmission(LEFT_ADR);
-  //Wire.write(0);
-  Wire.endTransmission();
-  Wire.requestFrom(LEFT_ADR, 10, 1);
-
-  for (size_t i = 0; i < sensorData->front_sensor_size; i++){
-    buf[i + 10] = Wire.read();
-  }
-
-  USBSerial.printf("Values: ");
-  for (size_t i = 0; i < sensorData->front_sensor_size; i++){
-    uint16_t val = (uint16_t)(buf[2 * i]) | (((uint16_t)(buf[2 * i + 1]) << 8) & 0xFF00);
-    USBSerial.printf(" %d", val);
-    num += val * i * 1000;
-    denom += val;
-  }
-  USBSerial.printf("\n");
-  sensorData->lineSensor_value_front = (uint32_t)(num / denom);
-  USBSerial.printf("Line sensor value front: %d\n", sensorData->lineSensor_value_front); 
-  #if DEBUG_MODE == 1
-    USBSerial.printf("Line sensor value front: %d\n", sensorData->lineSensor_value_front);
-  #endif
-}*/
 
 void lineSensor_value_back(struct sensorData_t* sensorData){
   int32_t back_buffer[5] = {0x00};
@@ -132,6 +94,7 @@ void update_encoder(struct sensorData_t* sensorData, struct encoderData_t* encod
   sensorData->prev_rightEncoderTick = sensorData->rightEncoderTick;
   sensorData->leftEncoderTick = encoderData->ENC_1_tick;
   sensorData->rightEncoderTick = encoderData->ENC_2_tick;
+  encoderData->tick_rate_of_change = (float)(sensorData->leftEncoderTick - sensorData->prev_leftEncoderTick)/sensorData->dt;
 }
 
 void calibrate_front_line_sensor(struct sensorData_t* sensorData){

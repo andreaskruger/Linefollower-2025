@@ -26,6 +26,7 @@
  * @param ENC_2_B: Pin of encoder 2 channel B (int32_t).
  * @param ENC_1_tick: Tick count of encoder 1 (volatile int32_t).
  * @param ENC_2_tick: Tick count of encoder 2 (volatile int32_t).
+ * @param tick_rate_of_change: Rate of change of the tick count of the encoders (float).
  */
 struct encoderData_t{
     int32_t ENC_1_A;
@@ -34,6 +35,7 @@ struct encoderData_t{
     int32_t ENC_2_B;
     volatile int32_t ENC_1_tick;
     volatile int32_t ENC_2_tick;
+    float tick_rate_of_change;
 };
 
 /**
@@ -76,9 +78,12 @@ void init_i2c_frontSensor();
  * @brief Read the value of the front line sensor.
  * @param sensorData: Pointer to the sensor data struct.
  * @see sensorData_t
+ * @param device_addr: Address of the device to read from.
+ * @param reg: Register to read from.
+ * @param len: Length of the data to read.
  */
 //void lineSensor_value_front(struct sensorData_t* sensorData);
-void lineSensor_value_front(struct sensorData_t* sensorData, uint8_t device_addr, uint8_t reg, size_t len, int32_t offset);
+void lineSensor_value_front(struct sensorData_t* sensorData, uint8_t device_addr, uint8_t reg, size_t len);
 
 /**
  * @brief Read the value of the back line sensor.
@@ -131,4 +136,3 @@ void store_sensor_calibration_eeprom(struct sensorData_t* sensorData);
  */
 void read_sensor_calibration_eeprom(struct sensorData_t* sensorData);
 #endif
-

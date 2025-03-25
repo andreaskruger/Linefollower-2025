@@ -24,6 +24,7 @@
  * @param output: Control signal (int32_t).
  */
 struct PID_t{
+    String name;
     float Kp;
     float Ki;
     float Kd;
@@ -120,4 +121,3 @@ void update_PID_setpoint(struct PID_t* pid, float new_setpoint);
 void feedforward_PID(struct PID_t* pid, float input);
 
 #endif
-

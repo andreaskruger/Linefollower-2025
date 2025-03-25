@@ -18,6 +18,11 @@ typedef enum{
     STOPPING
 } force_stop_commands_t;
 
+typedef enum{
+    START_RUNNING,
+    STOP_RUNNING
+} no_wifi_commands_t;
+
 /**
  * @brief Struct to store position data and velocity data.
  * @param x_pos: X position (float).
@@ -129,5 +134,24 @@ void line_lost_reverse(void);
  */
 void motor_pins_setup();
 
-#endif
+/**
+ * @brief Update the base speed.
+ * 
+ * @param robotStates: Pointer to the robot states struct.
+ * @param new_baseSpeed: New base speed (int32_t).
+ */
+void update_base_speed(struct robotStates_t* robotStates, int32_t new_baseSpeed);
 
+/**
+ * @brief Get the no wifi command.
+ * 
+ * @return int32_t: No wifi command.
+ */
+int32_t get_no_wifi_command(void);
+
+/**
+ * @brief Start the running command, used when no wifi is available.
+ */
+void start_running();
+
+#endif

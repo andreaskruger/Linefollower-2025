@@ -11,13 +11,13 @@
 #define DEFINES_H
 
 /*Global Defines*/
+//Serial
+#define BAUD_RATE                   (115200)
+// WiFi
+#define WIFI_MODE                   (1) // 0: OFF, 1: ON
+
 //Debugging
 #define DEBUG_MODE                  (0)  // 0: OFF, 1: ON
-
-// Clamping
-#define MIN(a, b) (((a) < (b)) ? (a) : (b))
-#define MAX(a, b) (((a) > (b)) ? (a) : (b))
-#define CLAMP(x, lower, upper) (MIN((upper), MAX((x), (lower))))
 
 // Robot constants
 #define ROBOT_LENGTH                (0.194f) // In meters
@@ -70,6 +70,7 @@
 #define DEBOUNCE_DELAY              (50)
 
 // Sensors
+#define STD_SETPOINT                (4500.0f)
 #define backSensor_1                (4)
 #define backSensor_2                (5)
 #define backSensor_3                (6)
@@ -87,12 +88,12 @@
 #define ALL_BLACK_VALUE             (9000) // Figure out a value and a range to signal the end line is found
 
 // PID
-#define STD_SPEED_KP                (0.5f)
+#define STD_SPEED_KP                (0.45f)
 #define STD_SPEED_KI                (0.0f)
-#define STD_SPEED_KD                (10.0f)
-#define STD_PWM_KP                  (0.5f)
+#define STD_SPEED_KD                (5.5f)
+#define STD_PWM_KP                  (0.45f)
 #define STD_PWM_KI                  (0.0f)
-#define STD_PWM_KD                  (10.0f)
+#define STD_PWM_KD                  (5.5f)
 #define AGR_SPEED_KP                (0.0f)
 #define AGR_SPEED_KI                (0.0f)
 #define AGR_SPEED_KD                (0.0f)

@@ -24,7 +24,7 @@ String construct_message(struct robotStates_t* robotStates){
   message += robotStates->lineSensor_value_front;
   message += ",Back line sensor:";
   message += robotStates->lineSensor_value_back;
-  message += "\n";
+  message += "end\n";
   return message;
 }
 
@@ -66,20 +66,23 @@ void sendPIDparams(WiFiClient client, struct PID_t* pid, struct PID_t* pid2){
     USBSerial.printf("No connected client, skipping\n");
     return;
   }
+  USBSerial.printf("Sending PID parameters to the client.\n");
   String message = "";
-  message += "PWM PID:";
+  message += "description:parameters,";
+  message += "parameters:";
+  message += "PWM PID ";
   message += pid->Kp;
-  message += ", ";
+  message += "-";
   message += pid->Ki;
-  message += ", ";
+  message += "-";
   message += pid->Kd;
-  message += " - Speed PID:";
+  message += " - Speed PID ";
   message += pid2->Kp;
-  message += ", ";
+  message += "-";
   message += pid2->Ki;
-  message += ", ";
+  message += "-";
   message += pid2->Kd;
-  message += "\n";
+  message += "end\n";
   client.print(message);
 }
 
@@ -122,8 +125,17 @@ int32_t receiveMessage(WiFiClient client, struct messageFields_t* messageParts){
       else if(messageParts->stringPart == "readData"){
         returnCode = 9;
       }
-      else if(messageParts->stringPart == "dissconnect"){
+      else if(messageParts->stringPart == "disconnect"){
         returnCode = 10;
+      }
+      else if(messageParts->stringPart == "setLeftPWMPID"){
+        returnCode = 11;
+      }
+      else if(messageParts->stringPart == "setRightPWMPID"){
+        returnCode = 12;
+      }
+      else if(messageParts->stringPart == "setBaseSpeed"){
+        returnCode = 13;
       }
       else{
         returnCode = 0;
@@ -146,26 +158,27 @@ void sendMessage(struct robotStates_t* robotStates, WiFiClient client){
 }
 
 void send_finishLine_found(WiFiClient client){
-  String message = "Finish line found\n";
+  String message = "description:finishLineFound\n";
   client.print(message);
 }
 
 void sendState(WiFiClient client, int32_t state){
   const char* stateNames[] = {
-    "STATE_INIT",
-    "STATE_IDLE",
-    "STATE_RUNNING",
-    "STATE_ERROR",
-    "STATE_FINISHED",
-    "STATE_CALIBRATING",
-    "STATE_TESTING_PWM",
-    "STATE_STOP",
-    "STATE_CLIENT_DISCONNECTED",
-    "STATE_LINE_LOST_REVERSE"
+    "Init",
+    "Idle",
+    "Running",
+    "Error",
+    "Waiting",
+    "Calibrating",
+    "Testing PWM",
+    "Stop",
+    "Disconnected",
+    "Line lost"
   };
 
-  String message = "description:stateUpdate-";
+  String message = "description:stateUpdate,";
+  message += "state:";
   message += stateNames[state];
-  message += "\n";
+  message += "end\n";
   client.print(message);
 }

@@ -14,6 +14,9 @@ volatile unsigned long button_1_lastPressTime = 0;
 volatile unsigned long button_2_lastPressTime = 0;
 volatile unsigned long button_3_lastPressTime = 0;
 
+/*
+Force stop motorrs, press once to stop and press once again to start again.
+*/
 void IRAM_ATTR button1_isr(){
   unsigned long currentTime = millis();
   if (currentTime - button_1_lastPressTime > DEBOUNCE_DELAY) {
@@ -23,14 +26,22 @@ void IRAM_ATTR button1_isr(){
   }
 }
 
+/*
+If the code is running in WIFI_MODE OFF(0) button 2 is used to start/stop the main loop, press once to start(1 second delay) and press again to stop.
+*/
 void IRAM_ATTR button2_isr(){
   unsigned long currentTime = millis();
   if (currentTime - button_2_lastPressTime > DEBOUNCE_DELAY) {
     button_2_lastPressTime = currentTime;
     USBSerial.printf("Button 2 pressed!\n");
+    #if WIFI_MODE == 0
+      start_running();
+    #endif
   }
 }
-
+/*
+Not yet in use
+*/
 void IRAM_ATTR button3_isr(){
   unsigned long currentTime = millis();
   if (currentTime - button_3_lastPressTime > DEBOUNCE_DELAY) {

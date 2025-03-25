@@ -57,6 +57,10 @@ String construct_message(struct robotStates_t* robotStates);
  * @retval 5 "Get PID" command receive
  * @retval 7 "Set PWM" command receive
  * @retval 8 "Calibrate" command received
+ * @retval 10 "Disconnect" command received
+ * @retval 11 "Set Left PWM" command received
+ * @retval 12 "Set Right PWM" command received
+ * @retval 13 "Set Base Speed" command received
  */
 int32_t receiveMessage(WiFiClient client, struct messageFields_t* messageParts);
 
@@ -100,4 +104,3 @@ void send_finishLine_found(WiFiClient client);
 void sendState(WiFiClient client, int32_t state);
 
 #endif
-

@@ -25,9 +25,12 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     encoderData->ENC_2_B = ENCODER_2_B;
     encoderData->ENC_1_tick = 0;
     encoderData->ENC_2_tick = 0;
+    encoderData->tick_rate_of_change = 0.0;
 
+    // Only used in the "Simple controller"
     USBSerial.printf("Initiating PWM-PID struct...\n");
-    pwm_pid->setpoint = 4500.0;
+    pwm_pid->name = "PWM-PID";
+    pwm_pid->setpoint = STD_SETPOINT;
     pwm_pid->output = 0.0;
     pwm_pid->error = 0;
     pwm_pid->error_prev = 0;
@@ -36,8 +39,10 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     pwm_pid->Ki = std_pid_values->pwm_Ki;
     pwm_pid->Kd = std_pid_values->pwm_Kd;
 
+    // Only used in the "Advanced controller"
     USBSerial.printf("Initiating right PWM-PID struct...\n");
-    right_pwm_pid->setpoint = 4500.0;
+    right_pwm_pid->name = "Right PWM-PID";
+    right_pwm_pid->setpoint = STD_SETPOINT;
     right_pwm_pid->output = 0.0;
     right_pwm_pid->error = 0;
     right_pwm_pid->error_prev = 0;
@@ -46,8 +51,10 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     right_pwm_pid->Ki = std_pid_values->pwm_Ki;
     right_pwm_pid->Kd = std_pid_values->pwm_Kd;
 
+    // Only used in the "Advanced controller"
     USBSerial.printf("Initiating left PWM-PID struct...\n");
-    left_pwm_pid->setpoint = 4500.0;
+    left_pwm_pid->name = "Left PWM-PID";
+    left_pwm_pid->setpoint = STD_SETPOINT;
     left_pwm_pid->output = 0.0;
     left_pwm_pid->error = 0;
     left_pwm_pid->error_prev = 0;
@@ -56,8 +63,10 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     left_pwm_pid->Ki = std_pid_values->pwm_Ki;
     left_pwm_pid->Kd = std_pid_values->pwm_Kd;
 
+    // Only used in the "Advanced controller"
     USBSerial.printf("Initiating speed-PID struct...\n");
-    speed_pid->setpoint = 0.0;
+    speed_pid->name = "Speed-PID";
+    speed_pid->setpoint = BASE_SPEED;
     speed_pid->output = 0.0;
     speed_pid->error = 0;
     speed_pid->error_prev = 0;
@@ -97,4 +106,3 @@ void initiate_structs(struct sensorData_t* sensorData, struct encoderData_t* enc
     lowPassFilter_back->alpha = LP_ALPHA;
     lowPassFilter_back->output = 0.0;
 }
-

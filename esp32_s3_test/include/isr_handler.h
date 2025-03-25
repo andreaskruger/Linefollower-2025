@@ -71,4 +71,3 @@ void setupEncoders(struct encoderData_t* encoders_struct);
 void buttons_setup();
 
 #endif
-

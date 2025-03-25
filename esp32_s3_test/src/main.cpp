@@ -11,7 +11,8 @@
 #include "initiate.h"
 
 // AP settigns and credentials
-const char *AP_SSID = "MyESP32AP";
+// const char *AP_SSID = "SpeedyBoiiNetwork";
+const char *AP_SSID = "SpeedyBoii";
 const char *AP_PASSWORD = "12345678";
 
 // The TCP server will listen on port 3333 (arbitrary choice)
@@ -47,10 +48,10 @@ system_state_t current_state = STATE_INIT;
 // DIP switch configurations
 typedef enum{
     UNDECLARED,
-    DIP_00,
-    DIP_01,
-    DIP_10,
-    DIP_11
+    DIP_00, // Nothing yet
+    DIP_01, // Nothing yet
+    DIP_10, // Run advanced control loop
+    DIP_11  // Run simple control loop
 } dip_switch_config_t;
 dip_switch_config_t dip_configuration = UNDECLARED;
 
@@ -77,7 +78,7 @@ struct STD_PID_t std_pid_values = {STD_SPEED_KP,
 struct encoderData_t* encodePtr = &encoders_struct;
 
 // count the nr of timer inputs to create a slower PID
-int32_t timer_counter = 9;
+int32_t timer_counter = 0;
 
 void startRunning(){
     USBSerial.printf("Start command received!\n");
@@ -88,6 +89,7 @@ void startRunning(){
 void stopRunning(){
     USBSerial.printf("Stop command received!\n");
     current_state = STATE_STOP;
+    //sendState(client, (int32_t)current_state);
 }
 
 void client_disconnected(){
@@ -127,7 +129,7 @@ void read_dipSwitchConfig(){
     int32_t dip_switch_1 = digitalRead(DIP1);
     int32_t dip_switch_2 = digitalRead(DIP2);
     if (dip_switch_1 == HIGH && dip_switch_2 == HIGH){
-        dip_configuration = DIP_11;
+        dip_configuration = DIP_11; 
     }else if (dip_switch_1 == HIGH && dip_switch_2 == LOW){
         dip_configuration = DIP_10;
     }else if (dip_switch_1 == LOW && dip_switch_2 == HIGH){
@@ -141,71 +143,96 @@ void read_dipSwitchConfig(){
 }
 
 void run_idle(){
-    int32_t returnCode = receiveMessage(client, &messageParts);
-    // Remake this into a switch statement
-    if (returnCode == 10){
-        client_disconnected();
-    }
-    else if (returnCode == 8){
-        calibrate_front_line_sensor(&sensorData);
-        calibrate_back_line_sensor(&sensorData);
-    }
-    else if (returnCode == 7){
-        set_motor_commands(RUN, LEFT_MOTOR, messageParts.floatPart_1);
-        set_motor_commands(RUN, RIGHT_MOTOR, messageParts.floatPart_1);
-    }
-    else if (returnCode == 6){
-        //sendState(client, (int32_t)current_state);
-    }
-    else if (returnCode == 5){
-        sendPIDparams(client, &pwm_pid, &speed_pid);
-    }
-    else if(returnCode == 4){
-        update_PID_parameters(&speed_pid, messageParts.floatPart_1, messageParts.floatPart_2, messageParts.floatPart_3);
-    }
-    else if(returnCode == 3){
-        update_PID_parameters(&pwm_pid, messageParts.floatPart_1, messageParts.floatPart_2, messageParts.floatPart_3);
-    }
-    else if (returnCode == 2){
-        stopRunning();
-    }
-    else if (returnCode == 1){
-        startRunning();
-    }
-    else if(returnCode == 0){
-        // Do nothing
-    }
-    else if(returnCode == -1){
-        current_state = STATE_IDLE;
-    }
+    #if WIFI_MODE == 1
+        int32_t returnCode = receiveMessage(client, &messageParts);
+        // Remake this into a switch statement
+        if (returnCode == 13){
+            update_base_speed(&robotStates, (int32_t)messageParts.floatPart_1);
+        }
+        else if (returnCode == 12){
+            update_PID_parameters(&right_pwm_pid, messageParts.floatPart_1, messageParts.floatPart_2, messageParts.floatPart_3);
+        }
+        else if (returnCode == 11){
+            update_PID_parameters(&left_pwm_pid, messageParts.floatPart_1, messageParts.floatPart_2, messageParts.floatPart_3);
+        }
+        else if (returnCode == 10){
+            client_disconnected();
+        }
+        else if (returnCode == 8){
+            calibrate_front_line_sensor(&sensorData);
+            calibrate_back_line_sensor(&sensorData);
+        }
+        else if (returnCode == 7){
+            set_motor_commands(RUN, LEFT_MOTOR, messageParts.floatPart_1);
+            set_motor_commands(RUN, RIGHT_MOTOR, messageParts.floatPart_1);
+        }
+        else if (returnCode == 6){
+            //sendState(client, (int32_t)current_state);
+        }
+        else if (returnCode == 5){
+            sendPIDparams(client, &pwm_pid, &speed_pid);
+        }
+        else if(returnCode == 4){
+            update_PID_parameters(&speed_pid, messageParts.floatPart_1, messageParts.floatPart_2, messageParts.floatPart_3);
+        }
+        else if(returnCode == 3){
+            update_PID_parameters(&pwm_pid, messageParts.floatPart_1, messageParts.floatPart_2, messageParts.floatPart_3);
+        }
+        else if (returnCode == 2){
+            stopRunning();
+        }
+        else if (returnCode == 1){
+            startRunning();
+        }
+        else if(returnCode == 0){
+            // Do nothing
+        }
+        else if(returnCode == -1){
+            current_state = STATE_IDLE;
+        }
+    #endif
+    #if WIFI_MODE == 0
+        int32_t command = get_no_wifi_command();
+        if (command == 1){
+            startRunning();
+        }
+        else{
+            current_state = STATE_STOP;
+        }
+    #endif
 }
 
 void run_simple(){
-    int32_t returnCode = receiveMessage(client, &messageParts);;
+    #if WIFI_MODE == 1
+        int32_t returnCode = receiveMessage(client, &messageParts);
+    #else
+        int32_t returnCode = 0;
+    #endif
     if (returnCode == 2){
         stopRunning();
+    }else if (returnCode == 10){
+        current_state = STATE_CLIENT_DISCONNECTED;
     }else{
-        lineSensor_value_front(&sensorData, LEFT_ADR, 0, 10, 0);
-        lineSensor_value_back(&sensorData);
-        update_encoder(&sensorData, &encoders_struct);
+        //lineSensor_value_front(&sensorData, LEFT_ADR, 0, 10);
+        //lineSensor_value_back(&sensorData);
+        //update_encoder(&sensorData, &encoders_struct);
         if (timer_counter <= 9){
             timer_counter = 0;
+            sendMessage(&robotStates, client);
         }
         calculate_PID(&pwm_pid, &LP_front_sensor_filter, sensorData.lineSensor_value_front);
 
-        update_robotStates(&sensorData, &positionData, &robotStates, pwm_pid.output, pwm_pid.output);
+        update_robotStates(&sensorData, &positionData, &robotStates, timer_counter, timer_counter*2);
         set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
         set_motor_commands(RUN, RIGHT_MOTOR, robotStates.right_controlSignal);
-        //sendMessage(&robotStates, client);
-        if (sensorData.total_value > ALL_BLACK_VALUE){// Make this a range and more robust so not just a "unlucky" sensor reading is a false finish line.
-            stop_motor_commands();
-            //send_finishLine_found(client);
+        if (sensorData.total_value > ALL_BLACK_VALUE){
+            current_state = STATE_STOP;
+            #if WIFI_MODE == 1
+                //send_finishLine_found(client);
+            #endif
+        }else{
+            current_state = STATE_FINISHED;
         }
-        current_state = STATE_FINISHED;
-    }
-    if (returnCode == 9){
-        //sendMessage(&robotStates, client);
-        USBSerial.printf("Send data to client");
     }
 }
 
@@ -214,31 +241,38 @@ void run_advanced(){
     if (returnCode == 2){
         stopRunning();
     }else{
-        lineSensor_value_front(&sensorData, LEFT_ADR, 0, 10, 0);
+        lineSensor_value_front(&sensorData, LEFT_ADR, 0, 10);
         lineSensor_value_back(&sensorData);
         update_encoder(&sensorData, &encoders_struct);
         if (timer_counter >= 9){
             timer_counter = 0;
             calculate_PID(&speed_pid, &LP_front_sensor_filter, sensorData.lineSensor_value_front);
+            update_PID_setpoint(&left_pwm_pid, speed_pid.output);
+            update_PID_setpoint(&right_pwm_pid, speed_pid.output);
+            sendMessage(&robotStates, client);
         }
-        left_pwm_pid.setpoint = speed_pid.output;
-        right_pwm_pid.setpoint = speed_pid.output;
 
+        /*
+        NOTE: Vl/Vr is the calculated velocity of the left wheel, can be changed to ticks/s or something else.
+        Encoder data stored in sensorData struct. Vl/Vr calculated in calculate_velocity() in robot_states.cpp
+        Examples: 
+            encoderChange = (sensorData.leftEncoderTick - sensorData.prev_leftEncoderTick)/DT;
+            Vl = ((PI*((float)(sensorData->leftEncoderTick - sensorData->prev_leftEncoderTick)*sensorData->dt))/MOTOR_POLES)*WHEEL_DIAMETER;
+
+        */
         calculate_PID(&left_pwm_pid, &LP_front_sensor_filter, positionData.Vl);
         calculate_PID(&right_pwm_pid, &LP_front_sensor_filter, positionData.Vr);
         update_robotStates(&sensorData, &positionData, &robotStates, left_pwm_pid.output, right_pwm_pid.output);
         set_motor_commands(RUN, LEFT_MOTOR, robotStates.left_controlSignal);
         set_motor_commands(RUN, RIGHT_MOTOR, robotStates.right_controlSignal);
-        //sendMessage(&robotStates, client);
         if (sensorData.total_value > ALL_BLACK_VALUE){
-            stop_motor_commands();
-            //send_finishLine_found(client);
+            current_state = STATE_STOP;
+            #if WIFI_MODE == 1
+                //send_finishLine_found(client);
+            #endif
+        }else{
+            current_state = STATE_FINISHED;
         }
-        current_state = STATE_FINISHED;
-    }
-    if (returnCode == 9){
-        //sendMessage(&robotStates, client);
-        USBSerial.printf("Send data to client");
     }
 }
 
@@ -262,10 +296,8 @@ void setupAccessPoint(){
 }
 
 void setup() {
-    //Wire.begin(I2C_SDA, I2C_SCL, I2C_READ_FREQ);
     init_i2c_frontSensor();
-    USBSerial.begin(115200);
-    delay(4000);
+    USBSerial.begin(BAUD_RATE);
     USBSerial.printf("Starting setup...\n");
     USBSerial.printf("Loop delta time: %f\n", DT);
 
@@ -273,19 +305,22 @@ void setup() {
     motor_pins_setup();
     read_dipSwitchConfig();
 
-    setupAccessPoint();
-    USBSerial.printf("Waiting for client to connect... ");
-    while (true){
-        if (!client || !client.connected()) {
-            WiFiClient newClient = server.available();
-            if (newClient) {
-                client = newClient;
-                USBSerial.printf("New client connected!\n");
-                break;
+    #if WIFI_MODE == 1
+        USBSerial.printf("WiFi mode is ON, setting up WiFi configs.\n");
+        setupAccessPoint();
+        USBSerial.printf("Waiting for client to connect... ");
+        while (true){
+            if (!client || !client.connected()) {
+                WiFiClient newClient = server.available();
+                if (newClient) {
+                    client = newClient;
+                    USBSerial.printf("New client connected!\n");
+                    break;
+                }
             }
+            delay(500);
         }
-        delay(500);
-    }
+    #endif
 
     // Setup encoders
     USBSerial.printf("Setting up resolution and frequency for encoders...\n");
@@ -314,28 +349,32 @@ void loop() {
         run_idle();
         break;
     case STATE_RUNNING:
-        if (dip_configuration == DIP_11){
-            run_simple();
-        }else if(dip_configuration == DIP_10){
-            run_advanced();
-        }
-        break;
+        run_simple();
+        // if (dip_configuration == DIP_11){
+        //     run_simple();
+        // }else if(dip_configuration == DIP_10){
+        //     run_advanced();
+        // }
+        // break;
     case STATE_FINISHED:
         break;
     case STATE_STOP:
         stop_motor_commands();
         current_state = STATE_IDLE;
-        //sendState(client, (int32_t)current_state);
         break;
     case STATE_CLIENT_DISCONNECTED:
-        if (!client || !client.connected()) {
-            WiFiClient newClient = server.available();
-            if (newClient) {
-                client = newClient;
-                USBSerial.printf("New client connected!\n");
-                break;
+        #if WIFI_MODE == 1
+            stop_motor_commands();
+            if (!client || !client.connected()) {
+                WiFiClient newClient = server.available();
+                if (newClient) {
+                    client = newClient;
+                    USBSerial.printf("New client connected!\n");
+                    current_state = STATE_IDLE;
+                    break;
+                }
             }
-        }
+        #endif
         break;
     default:
         break;
